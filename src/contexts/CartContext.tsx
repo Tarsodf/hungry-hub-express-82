@@ -1,7 +1,14 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export interface CartItemAddon {
+  name: string;
+  price: number;
+}
+
 export interface CartItemCustomization {
   removed: string[];
+  addons: CartItemAddon[];
+  meatPoint?: string;
 }
 
 export interface CartItem {
@@ -14,12 +21,16 @@ export interface CartItem {
   notes?: string;
 }
 
+const SERVICE_FEE = 0.90;
+
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeItem: (id: string, customizationKey?: string) => void;
+  updateQuantity: (id: string, quantity: number, customizationKey?: string) => void;
   clearCart: () => void;
+  subtotal: number;
+  serviceFee: number;
   total: number;
   itemCount: number;
   deliveryMode: "delivery" | "pickup";
@@ -28,20 +39,30 @@ interface CartContextType {
   setAddress: (address: string) => void;
   orderNotes: string;
   setOrderNotes: (notes: string) => void;
+  customerName: string;
+  setCustomerName: (name: string) => void;
+  customerPhone: string;
+  setCustomerPhone: (phone: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const getCustomizationKey = (c?: CartItemCustomization) =>
+  c ? JSON.stringify(c) : "default";
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [deliveryMode, setDeliveryMode] = useState<"delivery" | "pickup">("delivery");
   const [address, setAddress] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
 
   const addItem = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prev) => {
+      const key = getCustomizationKey(item.customization);
       const existingIndex = prev.findIndex(
-        (i) => i.id === item.id && JSON.stringify(i.customization) === JSON.stringify(item.customization)
+        (i) => i.id === item.id && getCustomizationKey(i.customization) === key
       );
       if (existingIndex >= 0) {
         const updated = [...prev];
@@ -52,29 +73,48 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id: string, customizationKey?: string) => {
+    setItems((prev) =>
+      prev.filter((i) => {
+        if (i.id !== id) return true;
+        if (customizationKey) return getCustomizationKey(i.customization) !== customizationKey;
+        return false;
+      })
+    );
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number, customizationKey?: string) => {
     if (quantity <= 0) {
-      removeItem(id);
+      removeItem(id, customizationKey);
       return;
     }
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        if (customizationKey && getCustomizationKey(i.customization) !== customizationKey) return i;
+        return { ...i, quantity };
+      })
+    );
   };
 
   const clearCart = () => setItems([]);
 
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const subtotal = items.reduce((sum, i) => {
+    const addonsTotal = i.customization?.addons?.reduce((a, addon) => a + addon.price, 0) || 0;
+    return sum + (i.price + addonsTotal) * i.quantity;
+  }, 0);
+  const serviceFee = items.length > 0 ? SERVICE_FEE : 0;
+  const total = subtotal + serviceFee;
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
     <CartContext.Provider
       value={{
         items, addItem, removeItem, updateQuantity, clearCart,
-        total, itemCount, deliveryMode, setDeliveryMode,
+        subtotal, serviceFee, total, itemCount,
+        deliveryMode, setDeliveryMode,
         address, setAddress, orderNotes, setOrderNotes,
+        customerName, setCustomerName, customerPhone, setCustomerPhone,
       }}
     >
       {children}

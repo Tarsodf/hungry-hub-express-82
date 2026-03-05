@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      menu_addons: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: number
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_addons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_categories: {
         Row: {
           created_at: string
@@ -42,6 +77,7 @@ export type Database = {
         Row: {
           category_id: string | null
           created_at: string
+          day_of_week: number | null
           description: string | null
           id: string
           image_url: string | null
@@ -54,6 +90,7 @@ export type Database = {
         Insert: {
           category_id?: string | null
           created_at?: string
+          day_of_week?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -66,6 +103,7 @@ export type Database = {
         Update: {
           category_id?: string | null
           created_at?: string
+          day_of_week?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -143,6 +181,7 @@ export type Database = {
           delivery_mode: string
           id: string
           notes: string | null
+          service_fee: number
           status: string
           stripe_payment_id: string | null
           total: number
@@ -157,6 +196,7 @@ export type Database = {
           delivery_mode?: string
           id?: string
           notes?: string | null
+          service_fee?: number
           status?: string
           stripe_payment_id?: string | null
           total?: number
@@ -171,6 +211,7 @@ export type Database = {
           delivery_mode?: string
           id?: string
           notes?: string | null
+          service_fee?: number
           status?: string
           stripe_payment_id?: string | null
           total?: number
