@@ -1,9 +1,8 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useCart, CartItemAddon } from "@/contexts/CartContext";
-import { Plus, Lock, Check, Star } from "lucide-react";
+import { Plus, Lock, Check, Star, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -33,16 +33,15 @@ const MenuPage = () => {
   const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
   const [selectedAddons, setSelectedAddons] = useState<CartItemAddon[]>([]);
   const [meatPoint, setMeatPoint] = useState("");
+  const [itemNotes, setItemNotes] = useState("");
+  const [itemQty, setItemQty] = useState(1);
 
-  const today = new Date().getDay(); // 0=Sun
+  const today = new Date().getDay();
 
   const { data: categories = [] } = useQuery({
     queryKey: ["menu-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("menu_categories")
-        .select("*")
-        .order("sort_order");
+      const { data, error } = await supabase.from("menu_categories").select("*").order("sort_order");
       if (error) throw error;
       return data;
     },
@@ -64,31 +63,16 @@ const MenuPage = () => {
   const { data: addons = [] } = useQuery({
     queryKey: ["menu-addons"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("menu_addons")
-        .select("*")
-        .eq("is_active", true);
+      const { data, error } = await supabase.from("menu_addons").select("*").eq("is_active", true);
       if (error) throw error;
       return data;
     },
   });
 
-  const categoryNames = ["Todos", ...categories.map((c: any) => `${c.emoji || ""} ${c.name}`.trim())];
-  const categoryMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    categories.forEach((c: any) => {
-      map[`${c.emoji || ""} ${c.name}`.trim()] = c.name;
-    });
-    return map;
-  }, [categories]);
-
   const filteredItems = useMemo(() => {
-    const catName = categoryMap[activeCategory] || (activeCategory === "Todos" ? null : activeCategory);
-    const items = catName
-      ? menuItems.filter((i: any) => i.menu_categories?.name === catName)
-      : menuItems;
-    return items;
-  }, [activeCategory, menuItems, categoryMap]);
+    if (activeCategory === "Todos") return menuItems;
+    return menuItems.filter((i: any) => i.menu_categories?.name === activeCategory);
+  }, [activeCategory, menuItems]);
 
   const getItemAddons = (item: any) => {
     const catId = item.category_id || item.menu_categories?.id;
@@ -103,6 +87,8 @@ const MenuPage = () => {
     setRemovedIngredients([]);
     setSelectedAddons([]);
     setMeatPoint("");
+    setItemNotes("");
+    setItemQty(1);
   };
 
   const handleAddToCart = () => {
@@ -112,6 +98,8 @@ const MenuPage = () => {
       name: customizeItem.name,
       price: Number(customizeItem.price),
       image: customizeItem.image_url || "",
+      quantity: itemQty,
+      notes: itemNotes || undefined,
       customization: {
         removed: removedIngredients,
         addons: selectedAddons,
@@ -125,7 +113,8 @@ const MenuPage = () => {
   const handleQuickAdd = (item: any) => {
     const itemAddons = getItemAddons(item);
     const hasIngredients = item.ingredients && item.ingredients.length > 0;
-    if (itemAddons.length > 0 || hasIngredients) {
+    const needsMeatPoint = isExecutivo(item) || item.menu_categories?.name === "Hambúrgueres";
+    if (itemAddons.length > 0 || hasIngredients || needsMeatPoint) {
       openCustomize(item);
     } else {
       addItem({
@@ -148,32 +137,34 @@ const MenuPage = () => {
   };
 
   const customizeAddonsTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
+  const categoryNames = ["Todos", ...categories.map((c: any) => c.name)];
 
   return (
     <main className="bg-background min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl text-center">
-          Cardápio
-        </h1>
-        <p className="text-center text-muted-foreground font-body mt-2">
-          Hoje é <span className="font-semibold text-accent">{DAY_NAMES[today]}</span>
-        </p>
+        {/* Header */}
+        <div className="text-center mb-2">
+          <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">Cardápio</h1>
+          <p className="text-muted-foreground font-body mt-2">
+            🔥 Hoje é <span className="font-semibold text-primary">{DAY_NAMES[today]}</span> — 
+            Os Pratos Executivos mudam diariamente!
+          </p>
+        </div>
 
         {/* Category tabs */}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {categoryNames.map((cat) => (
-            <Button
+            <button
               key={cat}
-              variant={activeCategory === cat ? "default" : "outline"}
-              size="sm"
               onClick={() => setActiveCategory(cat)}
-              className={activeCategory === cat
-                ? "bg-primary text-primary-foreground"
-                : "border-border text-foreground hover:bg-accent hover:text-accent-foreground"
-              }
+              className={`px-4 py-2 rounded-full font-body text-sm font-medium transition-all ${
+                activeCategory === cat
+                  ? "bg-primary text-primary-foreground"
+                  : "glass text-muted-foreground hover:text-foreground hover:border-primary/30"
+              }`}
             >
               {cat}
-            </Button>
+            </button>
           ))}
         </div>
 
@@ -181,11 +172,11 @@ const MenuPage = () => {
         {isLoading ? (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="p-5 space-y-3">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </Card>
+              <div key={i} className="glass rounded-xl p-5 space-y-3">
+                <Skeleton className="h-40 w-full rounded-lg bg-secondary" />
+                <Skeleton className="h-6 w-3/4 bg-secondary" />
+                <Skeleton className="h-4 w-full bg-secondary" />
+              </div>
             ))}
           </div>
         ) : filteredItems.length === 0 ? (
@@ -198,21 +189,25 @@ const MenuPage = () => {
               const available = isAvailableToday(item);
               const exec = isExecutivo(item);
               return (
-                <Card
+                <div
                   key={item.id}
-                  className={`overflow-hidden border-border bg-card flex flex-col transition-opacity ${
-                    !available ? "opacity-50" : ""
-                  } ${exec && available ? "ring-2 ring-accent" : ""}`}
+                  className={`menu-card glass rounded-xl overflow-hidden flex flex-col ${
+                    !available ? "disabled-day" : ""
+                  } ${exec && available ? "ring-1 ring-primary/50" : ""}`}
                 >
-                  {item.image_url && (
+                  {item.image_url ? (
                     <img src={item.image_url} alt={item.name} className="h-48 w-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="h-48 w-full bg-secondary flex items-center justify-center text-4xl">
+                      {exec ? "🍽️" : "🍴"}
+                    </div>
                   )}
                   <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <h3 className="font-display text-lg font-semibold text-card-foreground">{item.name}</h3>
+                        <h3 className="font-display text-lg font-semibold text-foreground">{item.name}</h3>
                         {exec && (
-                          <Badge variant={available ? "default" : "secondary"} className="mt-1 text-xs">
+                          <Badge className={`mt-1 text-xs ${available ? "bg-primary/20 text-primary border-primary/30" : "bg-secondary text-muted-foreground"}`}>
                             {available ? (
                               <><Star className="h-3 w-3 mr-1" /> Prato do dia</>
                             ) : (
@@ -221,19 +216,24 @@ const MenuPage = () => {
                           </Badge>
                         )}
                       </div>
-                      <span className="whitespace-nowrap font-body text-lg font-bold text-accent">
-                        €{Number(item.price).toFixed(2)}
-                      </span>
+                      <div className="text-right">
+                        <span className="font-body text-lg font-bold text-primary">
+                          €{Number(item.price).toFixed(2)}
+                        </span>
+                        <p className="text-[10px] text-muted-foreground">+ €0.90 taxa</p>
+                      </div>
                     </div>
-                    <p className="mt-2 flex-1 font-body text-sm text-muted-foreground">{item.description}</p>
+                    {item.description && (
+                      <p className="mt-2 flex-1 font-body text-sm text-muted-foreground">{item.description}</p>
+                    )}
                     {item.ingredients && item.ingredients.length > 0 && (
-                      <p className="mt-1 font-body text-xs text-muted-foreground">
+                      <p className="mt-1 font-body text-xs text-muted-foreground/70">
                         {item.ingredients.join(" · ")}
                       </p>
                     )}
                     <Button
                       size="sm"
-                      className="mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                      className="mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body"
                       onClick={() => handleQuickAdd(item)}
                       disabled={!available}
                     >
@@ -244,7 +244,7 @@ const MenuPage = () => {
                       )}
                     </Button>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
@@ -253,76 +253,123 @@ const MenuPage = () => {
 
       {/* Customization dialog */}
       <Dialog open={!!customizeItem} onOpenChange={(open) => !open && setCustomizeItem(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md glass border-border bg-card">
           <DialogHeader>
-            <DialogTitle className="font-display">{customizeItem?.name}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="font-display text-xl">{customizeItem?.name}</DialogTitle>
+              <span className="font-body text-lg font-bold text-primary">
+                €{Number(customizeItem?.price || 0).toFixed(2)}
+                <span className="text-xs text-muted-foreground ml-1">+ €0.90 taxa</span>
+              </span>
+            </div>
           </DialogHeader>
-          <div className="space-y-5 max-h-[60vh] overflow-y-auto">
-            {/* Remove ingredients */}
-            {customizeItem?.ingredients && customizeItem.ingredients.length > 0 && (
-              <div>
-                <Label className="font-body font-semibold text-sm">Remover ingredientes</Label>
-                <div className="mt-2 space-y-2">
-                  {customizeItem.ingredients.map((ing: string) => (
-                    <label key={ing} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={removedIngredients.includes(ing)}
-                        onCheckedChange={(checked) => {
-                          setRemovedIngredients((prev) =>
-                            checked ? [...prev, ing] : prev.filter((r) => r !== ing)
-                          );
-                        }}
-                      />
-                      <span className="font-body text-sm text-foreground">{ing}</span>
-                    </label>
+          <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
+            {/* Meat point */}
+            {customizeItem && (isExecutivo(customizeItem) || customizeItem.menu_categories?.name === "Hambúrgueres") && (
+              <div className="glass rounded-lg p-4">
+                <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
+                  🥩 Ponto da Carne
+                </Label>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {[
+                    { value: "Mal passado", label: "Mal Passado", desc: "Suculenta" },
+                    { value: "Ao ponto", label: "Ao Ponto", desc: "Equilibrado" },
+                    { value: "Bem passado", label: "Bem Passado", desc: "Totalmente cozida" },
+                  ].map((point) => (
+                    <button
+                      key={point.value}
+                      onClick={() => setMeatPoint(point.value)}
+                      className={`rounded-lg p-3 text-center transition-all ${
+                        meatPoint === point.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <p className="font-body text-xs font-semibold">{point.label}</p>
+                      <p className="font-body text-[10px] mt-0.5 opacity-70">{point.desc}</p>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Meat point for executivos & hamburgers */}
-            {customizeItem && (isExecutivo(customizeItem) || customizeItem.menu_categories?.name === "Hambúrgueres") && (
-              <div>
-                <Label className="font-body font-semibold text-sm">Ponto da carne</Label>
-                <RadioGroup value={meatPoint} onValueChange={setMeatPoint} className="mt-2 space-y-1">
-                  {["Mal passado", "Ao ponto", "Bem passado"].map((point) => (
-                    <div key={point} className="flex items-center gap-2">
-                      <RadioGroupItem value={point} id={`meat-${point}`} />
-                      <Label htmlFor={`meat-${point}`} className="font-body text-sm">{point}</Label>
-                    </div>
+            {/* Remove ingredients */}
+            {customizeItem?.ingredients && customizeItem.ingredients.length > 0 && (
+              <div className="glass rounded-lg p-4">
+                <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
+                  ❌ Remover Ingredientes
+                </Label>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {customizeItem.ingredients.map((ing: string) => (
+                    <button
+                      key={ing}
+                      onClick={() => setRemovedIngredients((prev) =>
+                        prev.includes(ing) ? prev.filter((r) => r !== ing) : [...prev, ing]
+                      )}
+                      className={`rounded-full px-3 py-1.5 font-body text-xs transition-all ${
+                        removedIngredients.includes(ing)
+                          ? "bg-destructive/20 text-destructive line-through"
+                          : "bg-secondary text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {ing}
+                    </button>
                   ))}
-                </RadioGroup>
+                </div>
               </div>
             )}
 
             {/* Add-ons */}
             {customizeItem && getItemAddons(customizeItem).length > 0 && (
-              <div>
-                <Label className="font-body font-semibold text-sm">Adicionais</Label>
-                <div className="mt-2 space-y-2">
+              <div className="glass rounded-lg p-4">
+                <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
+                  ➕ Adicionais
+                </Label>
+                <div className="mt-3 space-y-2">
                   {getItemAddons(customizeItem).map((addon: any) => (
-                    <label key={addon.id} className="flex items-center justify-between gap-2 cursor-pointer">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={!!selectedAddons.find((a) => a.name === addon.name)}
-                          onCheckedChange={() => toggleAddon(addon)}
-                        />
-                        <span className="font-body text-sm text-foreground">{addon.name}</span>
-                      </div>
-                      <span className="font-body text-sm text-accent font-semibold">+€{Number(addon.price).toFixed(2)}</span>
-                    </label>
+                    <button
+                      key={addon.id}
+                      onClick={() => toggleAddon(addon)}
+                      className={`w-full flex items-center justify-between rounded-lg px-3 py-2.5 font-body text-sm transition-all ${
+                        selectedAddons.find((a) => a.name === addon.name)
+                          ? "bg-primary/20 text-primary border border-primary/30"
+                          : "bg-secondary text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span>{addon.name}</span>
+                      <span className="font-semibold text-primary">+€{Number(addon.price).toFixed(2)}</span>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Notes */}
+            <div className="glass rounded-lg p-4">
+              <Label className="font-body font-semibold text-sm text-foreground">📝 Observações</Label>
+              <Textarea
+                value={itemNotes}
+                onChange={(e) => setItemNotes(e.target.value)}
+                placeholder="Ex: sem cebola, mais molho..."
+                className="mt-2 bg-secondary border-border text-foreground"
+                rows={2}
+              />
+            </div>
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="border-t border-border pt-4">
             <div className="w-full flex items-center justify-between">
-              <span className="font-body font-bold text-foreground">
-                €{((customizeItem ? Number(customizeItem.price) : 0) + customizeAddonsTotal).toFixed(2)}
-              </span>
-              <Button onClick={handleAddToCart} className="bg-primary text-primary-foreground">
-                <Check className="mr-1 h-4 w-4" /> Adicionar ao Carrinho
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setItemQty(Math.max(1, itemQty - 1))}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="font-body font-bold text-foreground w-6 text-center">{itemQty}</span>
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setItemQty(itemQty + 1)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button onClick={handleAddToCart} className="bg-primary text-primary-foreground font-body font-semibold px-6">
+                Adicionar — €{(((customizeItem ? Number(customizeItem.price) : 0) + customizeAddonsTotal) * itemQty).toFixed(2)}
               </Button>
             </div>
           </DialogFooter>

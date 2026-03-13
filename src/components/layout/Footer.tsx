@@ -1,48 +1,69 @@
-import { MapPin, Clock, Phone } from "lucide-react";
+import { MapPin, Clock, Phone, Mail } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-warm-brown-dark text-warm-cream">
+    <footer className="border-t border-border bg-card">
       <div className="container mx-auto px-4 py-12">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <h3 className="font-display text-xl font-bold text-warm-gold mb-4">Dom Bistro Grill</h3>
-            <p className="font-body text-sm leading-relaxed opacity-80">
-              Sabores autênticos na brasa, com ingredientes frescos e o tempero que só a tradição traz.
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+                <span className="text-lg">🔥</span>
+              </div>
+              <h3 className="font-display text-xl font-bold text-foreground">Dom Bistro Grill</h3>
+            </div>
+            <p className="font-body text-sm leading-relaxed text-muted-foreground">
+              Cozinha brasileira autêntica no coração de Guimarães. 
+              Do churrasco gaúcho à feijoada carioca, trazemos os sabores do Brasil até si.
             </p>
           </div>
 
           <div>
-            <h4 className="font-display text-lg font-semibold text-warm-gold mb-4">Contacto</h4>
-            <div className="space-y-3 text-sm opacity-80">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-warm-gold" />
-                <span>Rua do Sabor, 123 - Centro</span>
+            <h4 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" /> Contacto
+            </h4>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>Rua de Santa Maria, 123</p>
+              <p>Centro Histórico</p>
+              <p>4810-445 Guimarães, Portugal</p>
+              <div className="flex items-center gap-2 pt-2">
+                <Phone className="h-4 w-4 text-primary" />
+                <span>+351 930 580 520</span>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-warm-gold" />
-                <span>+351 912 345 678</span>
+                <Mail className="h-4 w-4 text-primary" />
+                <span>contato@dombistrogrill.pt</span>
               </div>
             </div>
           </div>
 
           <div>
-            <h4 className="font-display text-lg font-semibold text-warm-gold mb-4">Horário</h4>
-            <div className="space-y-2 text-sm opacity-80">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-warm-gold" />
-                <span>Seg - Sex: 11h às 23h</span>
+            <h4 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" /> Horário
+            </h4>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Segunda a Sexta</span>
+                <span className="text-foreground font-medium">11:00 - 22:00</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-warm-gold" />
-                <span>Sáb - Dom: 11h às 00h</span>
+              <div className="flex justify-between">
+                <span>Sábado</span>
+                <span className="text-foreground font-medium">11:00 - 23:00</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Domingo</span>
+                <span className="text-foreground font-medium">12:00 - 21:00</span>
+              </div>
+              <div className="mt-4 flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-xs">
+                <span className="text-primary">🚚</span>
+                <span>Entregas em Guimarães e vizinhanças</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-warm-burgundy pt-6 text-center text-xs opacity-60">
-          © {new Date().getFullYear()} Dom Bistro Grill. Todos os direitos reservados.
+        <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Dom Bistro Grill — Guimarães, Portugal. Todos os direitos reservados.
         </div>
       </div>
     </footer>

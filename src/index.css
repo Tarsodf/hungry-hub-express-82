@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,93 +6,52 @@
 
 @layer base {
   :root {
-    --background: 30 25% 97%;
-    --foreground: 20 20% 12%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
 
-    --card: 30 20% 95%;
-    --card-foreground: 20 20% 12%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 30 25% 97%;
-    --popover-foreground: 20 20% 12%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 25 60% 28%;
-    --primary-foreground: 40 30% 95%;
+    --primary: 25 90% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 30% 88%;
-    --secondary-foreground: 20 20% 12%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 30 15% 92%;
-    --muted-foreground: 20 10% 45%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 38 70% 50%;
-    --accent-foreground: 20 20% 12%;
+    --accent: 25 90% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 30 15% 85%;
-    --input: 30 15% 85%;
-    --ring: 25 60% 28%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 25 90% 45%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 25 25% 15%;
-    --sidebar-foreground: 40 20% 90%;
-    --sidebar-primary: 38 70% 50%;
-    --sidebar-primary-foreground: 20 20% 12%;
-    --sidebar-accent: 25 20% 22%;
-    --sidebar-accent-foreground: 40 20% 90%;
-    --sidebar-border: 25 15% 25%;
-    --sidebar-ring: 38 70% 50%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 25 90% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 25 90% 45%;
 
-    --warm-cream: 40 30% 95%;
-    --warm-gold: 38 70% 50%;
-    --warm-burgundy: 350 45% 30%;
-    --warm-brown-dark: 25 25% 15%;
-  }
+    --warm-cream: 0 0% 92%;
+    --warm-gold: 25 90% 45%;
+    --warm-burgundy: 350 45% 35%;
+    --warm-brown-dark: 0 0% 6%;
 
-  .dark {
-    --background: 25 25% 8%;
-    --foreground: 40 20% 92%;
-
-    --card: 25 20% 12%;
-    --card-foreground: 40 20% 92%;
-
-    --popover: 25 20% 12%;
-    --popover-foreground: 40 20% 92%;
-
-    --primary: 38 70% 50%;
-    --primary-foreground: 25 25% 8%;
-
-    --secondary: 25 15% 18%;
-    --secondary-foreground: 40 20% 92%;
-
-    --muted: 25 15% 18%;
-    --muted-foreground: 30 10% 55%;
-
-    --accent: 38 70% 50%;
-    --accent-foreground: 25 25% 8%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 25 15% 20%;
-    --input: 25 15% 20%;
-    --ring: 38 70% 50%;
-
-    --sidebar-background: 25 25% 6%;
-    --sidebar-foreground: 40 20% 90%;
-    --sidebar-primary: 38 70% 50%;
-    --sidebar-primary-foreground: 25 25% 8%;
-    --sidebar-accent: 25 15% 12%;
-    --sidebar-accent-foreground: 40 20% 90%;
-    --sidebar-border: 25 15% 15%;
-    --sidebar-ring: 38 70% 50%;
-
-    --warm-cream: 40 20% 15%;
-    --warm-gold: 38 70% 50%;
-    --warm-burgundy: 350 45% 40%;
-    --warm-brown-dark: 25 25% 6%;
+    --glass-bg: 0 0% 100% / 0.05;
+    --glass-border: 0 0% 100% / 0.1;
   }
 }
 
@@ -108,4 +67,67 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: hsl(0 0% 10%); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--primary)); border-radius: 4px; }
+}
+
+@layer utilities {
+  .glass {
+    background: hsla(var(--glass-bg));
+    backdrop-filter: blur(10px);
+    border: 1px solid hsla(var(--glass-border));
+  }
+
+  .menu-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .menu-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px hsla(25 90% 45% / 0.2);
+  }
+
+  .badge-pulse {
+    animation: pulse-badge 2s infinite;
+  }
+
+  .img-skeleton {
+    background: linear-gradient(90deg, hsl(0 0% 10%) 25%, hsl(0 0% 16%) 50%, hsl(0 0% 10%) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+  }
+
+  .disabled-day {
+    opacity: 0.5;
+    filter: grayscale(0.8);
+    pointer-events: none;
+    position: relative;
+  }
+  .disabled-day::after {
+    content: 'DISPONÍVEL APENAS NO DIA';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: hsla(0 72% 50% / 0.95);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+    z-index: 10;
+  }
+}
+
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
