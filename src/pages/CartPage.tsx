@@ -56,42 +56,44 @@ const CartPage = () => {
     return msg;
   };
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!customerName.trim() || customerName.trim().length > 100) errs.customerName = "Nome obrigatório (máx. 100 caracteres)";
+    if (!customerPhone.trim() || !/^\+?[0-9\s]{7,20}$/.test(customerPhone.trim())) errs.customerPhone = "Telefone inválido";
+    if (deliveryMode === "delivery" && (!address.trim() || address.trim().length > 200)) errs.address = "Endereço obrigatório (máx. 200 caracteres)";
+    if (orderNotes.length > 500) errs.orderNotes = "Observações: máx. 500 caracteres";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmitOrder = async () => {
-    if (!customerName.trim()) { toast.error("Por favor, insira o seu nome."); return; }
-    if (!customerPhone.trim()) { toast.error("Por favor, insira o seu telefone."); return; }
-    if (deliveryMode === "delivery" && !address.trim()) { toast.error("Por favor, insira o endereço de entrega."); return; }
+    if (!validate()) return;
 
     setSending(true);
     try {
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          customer_name: customerName.trim(),
-          customer_email: "",
-          customer_phone: customerPhone.trim(),
-          delivery_mode: deliveryMode,
-          address: deliveryMode === "delivery" ? address.trim() : "",
-          notes: orderNotes.trim(),
-          total,
-          service_fee: serviceFee,
-          status: "received",
-        })
-        .select("id")
-        .single();
+      const payload = {
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        delivery_mode: deliveryMode,
+        address: deliveryMode === "delivery" ? address.trim() : "",
+        notes: orderNotes.trim(),
+        items: items.map((item) => ({
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          customization: {
+            removed: item.customization?.removed || [],
+            addons: item.customization?.addons || [],
+            meatPoint: item.customization?.meatPoint || undefined,
+          },
+        })),
+      };
 
-      if (orderError) throw orderError;
+      const { data, error } = await supabase.functions.invoke("create-order", { body: payload });
 
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        menu_item_id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        customization: item.customization || {},
-      }));
-
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-      if (itemsError) throw itemsError;
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); setSending(false); return; }
 
       const message = buildWhatsAppMessage();
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
