@@ -88,6 +88,20 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Rate limiting: max 10 orders per minute globally
+    const windowStart = new Date(Date.now() - 60_000).toISOString();
+    const { count } = await supabaseAdmin
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", windowStart);
+
+    if ((count ?? 0) > 10) {
+      return new Response(
+        JSON.stringify({ error: "Muitos pedidos em pouco tempo. Tente novamente em 1 minuto." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Fetch authoritative prices from DB
     const menuItemIds = [...new Set(input.items.map((i) => i.menu_item_id))];
     const { data: menuItems, error: menuError } = await supabaseAdmin
