@@ -177,11 +177,13 @@ const CartPage = () => {
               <div className="mt-4 space-y-4">
                 <div>
                   <Label htmlFor="customerName" className="font-body text-sm text-muted-foreground">Nome *</Label>
-                  <Input id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="O seu nome" className="mt-1 bg-secondary border-border text-foreground" />
+                  <Input id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value.slice(0, 100))} placeholder="O seu nome" className="mt-1 bg-secondary border-border text-foreground" maxLength={100} />
+                  {errors.customerName && <p className="text-xs text-destructive mt-1">{errors.customerName}</p>}
                 </div>
                 <div>
                   <Label htmlFor="customerPhone" className="font-body text-sm text-muted-foreground">Telefone *</Label>
-                  <Input id="customerPhone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="+351 9XX XXX XXX" className="mt-1 bg-secondary border-border text-foreground" />
+                  <Input id="customerPhone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.slice(0, 20))} placeholder="+351 9XX XXX XXX" className="mt-1 bg-secondary border-border text-foreground" maxLength={20} />
+                  {errors.customerPhone && <p className="text-xs text-destructive mt-1">{errors.customerPhone}</p>}
                 </div>
                 <div>
                   <Label className="font-body text-sm text-muted-foreground">Modo de recebimento</Label>
@@ -203,12 +205,14 @@ const CartPage = () => {
                 {deliveryMode === "delivery" && (
                   <div>
                     <Label htmlFor="address" className="font-body text-sm text-muted-foreground">Endereço de entrega *</Label>
-                    <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, andar..." className="mt-1 bg-secondary border-border text-foreground" />
+                    <Input id="address" value={address} onChange={(e) => setAddress(e.target.value.slice(0, 200))} placeholder="Rua, número, andar..." className="mt-1 bg-secondary border-border text-foreground" maxLength={200} />
+                    {errors.address && <p className="text-xs text-destructive mt-1">{errors.address}</p>}
                   </div>
                 )}
                 <div>
                   <Label htmlFor="notes" className="font-body text-sm text-muted-foreground">Observações</Label>
-                  <Textarea id="notes" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Alguma observação?" className="mt-1 bg-secondary border-border text-foreground" rows={2} />
+                  <Textarea id="notes" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value.slice(0, 500))} placeholder="Alguma observação?" className="mt-1 bg-secondary border-border text-foreground" rows={2} maxLength={500} />
+                  {errors.orderNotes && <p className="text-xs text-destructive mt-1">{errors.orderNotes}</p>}
                 </div>
               </div>
 
