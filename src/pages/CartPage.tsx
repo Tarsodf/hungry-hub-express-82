@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { Trash2, Plus, Minus, ShoppingCart, Send } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,42 +56,44 @@ const CartPage = () => {
     return msg;
   };
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!customerName.trim() || customerName.trim().length > 100) errs.customerName = "Nome obrigatório (máx. 100 caracteres)";
+    if (!customerPhone.trim() || !/^\+?[0-9\s]{7,20}$/.test(customerPhone.trim())) errs.customerPhone = "Telefone inválido";
+    if (deliveryMode === "delivery" && (!address.trim() || address.trim().length > 200)) errs.address = "Endereço obrigatório (máx. 200 caracteres)";
+    if (orderNotes.length > 500) errs.orderNotes = "Observações: máx. 500 caracteres";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmitOrder = async () => {
-    if (!customerName.trim()) { toast.error("Por favor, insira o seu nome."); return; }
-    if (!customerPhone.trim()) { toast.error("Por favor, insira o seu telefone."); return; }
-    if (deliveryMode === "delivery" && !address.trim()) { toast.error("Por favor, insira o endereço de entrega."); return; }
+    if (!validate()) return;
 
     setSending(true);
     try {
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          customer_name: customerName.trim(),
-          customer_email: "",
-          customer_phone: customerPhone.trim(),
-          delivery_mode: deliveryMode,
-          address: deliveryMode === "delivery" ? address.trim() : "",
-          notes: orderNotes.trim(),
-          total,
-          service_fee: serviceFee,
-          status: "received",
-        })
-        .select("id")
-        .single();
+      const payload = {
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        delivery_mode: deliveryMode,
+        address: deliveryMode === "delivery" ? address.trim() : "",
+        notes: orderNotes.trim(),
+        items: items.map((item) => ({
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          customization: {
+            removed: item.customization?.removed || [],
+            addons: item.customization?.addons || [],
+            meatPoint: item.customization?.meatPoint || undefined,
+          },
+        })),
+      };
 
-      if (orderError) throw orderError;
+      const { data, error } = await supabase.functions.invoke("create-order", { body: payload });
 
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        menu_item_id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        customization: item.customization || {},
-      }));
-
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-      if (itemsError) throw itemsError;
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); setSending(false); return; }
 
       const message = buildWhatsAppMessage();
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
@@ -176,11 +177,13 @@ const CartPage = () => {
               <div className="mt-4 space-y-4">
                 <div>
                   <Label htmlFor="customerName" className="font-body text-sm text-muted-foreground">Nome *</Label>
-                  <Input id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="O seu nome" className="mt-1 bg-secondary border-border text-foreground" />
+                  <Input id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value.slice(0, 100))} placeholder="O seu nome" className="mt-1 bg-secondary border-border text-foreground" maxLength={100} />
+                  {errors.customerName && <p className="text-xs text-destructive mt-1">{errors.customerName}</p>}
                 </div>
                 <div>
                   <Label htmlFor="customerPhone" className="font-body text-sm text-muted-foreground">Telefone *</Label>
-                  <Input id="customerPhone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="+351 9XX XXX XXX" className="mt-1 bg-secondary border-border text-foreground" />
+                  <Input id="customerPhone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.slice(0, 20))} placeholder="+351 9XX XXX XXX" className="mt-1 bg-secondary border-border text-foreground" maxLength={20} />
+                  {errors.customerPhone && <p className="text-xs text-destructive mt-1">{errors.customerPhone}</p>}
                 </div>
                 <div>
                   <Label className="font-body text-sm text-muted-foreground">Modo de recebimento</Label>
@@ -202,12 +205,14 @@ const CartPage = () => {
                 {deliveryMode === "delivery" && (
                   <div>
                     <Label htmlFor="address" className="font-body text-sm text-muted-foreground">Endereço de entrega *</Label>
-                    <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, andar..." className="mt-1 bg-secondary border-border text-foreground" />
+                    <Input id="address" value={address} onChange={(e) => setAddress(e.target.value.slice(0, 200))} placeholder="Rua, número, andar..." className="mt-1 bg-secondary border-border text-foreground" maxLength={200} />
+                    {errors.address && <p className="text-xs text-destructive mt-1">{errors.address}</p>}
                   </div>
                 )}
                 <div>
                   <Label htmlFor="notes" className="font-body text-sm text-muted-foreground">Observações</Label>
-                  <Textarea id="notes" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Alguma observação?" className="mt-1 bg-secondary border-border text-foreground" rows={2} />
+                  <Textarea id="notes" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value.slice(0, 500))} placeholder="Alguma observação?" className="mt-1 bg-secondary border-border text-foreground" rows={2} maxLength={500} />
+                  {errors.orderNotes && <p className="text-xs text-destructive mt-1">{errors.orderNotes}</p>}
                 </div>
               </div>
 
