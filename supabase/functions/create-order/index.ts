@@ -54,10 +54,34 @@ function validateInput(body: unknown): { valid: true; data: OrderInput } | { val
     if (typeof it.menu_item_id !== "string") return { valid: false, error: "ID de item inválido" };
     const qty = Number(it.quantity);
     if (!Number.isInteger(qty) || qty < 1 || qty > 99) return { valid: false, error: "Quantidade inválida (1-99)" };
+    // Validate customization fields
+    const cust = (it.customization && typeof it.customization === "object") ? it.customization as Record<string, unknown> : {};
+    const removed = Array.isArray(cust.removed) ? cust.removed : [];
+    if (removed.length > 20) return { valid: false, error: "Demasiados ingredientes a remover" };
+    for (const r of removed) {
+      if (typeof r !== "string" || r.length > 100) return { valid: false, error: "Ingrediente inválido" };
+    }
+    const allowedMeatPoints = ["Mal passado", "Ao ponto", "Bem passado"];
+    const meatPoint = typeof cust.meatPoint === "string" ? cust.meatPoint : undefined;
+    if (meatPoint && !allowedMeatPoints.includes(meatPoint)) {
+      return { valid: false, error: "Ponto de carne inválido" };
+    }
+    const addons = Array.isArray(cust.addons) ? cust.addons : [];
+    if (addons.length > 20) return { valid: false, error: "Demasiados adicionais" };
+    for (const a of addons) {
+      if (!a || typeof a !== "object" || typeof (a as Record<string,unknown>).name !== "string") {
+        return { valid: false, error: "Adicional inválido" };
+      }
+    }
+
     items.push({
       menu_item_id: it.menu_item_id,
       quantity: qty,
-      customization: it.customization as OrderItemInput["customization"],
+      customization: {
+        removed: removed as string[],
+        addons: addons as { name: string; price: number }[],
+        meatPoint,
+      },
     });
   }
 
