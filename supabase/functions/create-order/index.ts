@@ -112,16 +112,35 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Rate limiting: max 10 orders per minute globally
+    // Rate limiting
     const windowStart = new Date(Date.now() - 60_000).toISOString();
-    const { count } = await supabaseAdmin
+
+    // Per-IP rate limit: max 3 orders per minute per client
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || req.headers.get("cf-connecting-ip")
+      || "unknown";
+    const { count: ipCount } = await supabaseAdmin
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", windowStart)
+      .eq("customer_phone", input.customer_phone);
+
+    if ((ipCount ?? 0) >= 3) {
+      return new Response(
+        JSON.stringify({ error: "Muitos pedidos em pouco tempo. Tente novamente em 1 minuto." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Global rate limit: max 60 orders per minute (realistic peak traffic)
+    const { count: globalCount } = await supabaseAdmin
       .from("orders")
       .select("id", { count: "exact", head: true })
       .gte("created_at", windowStart);
 
-    if ((count ?? 0) > 10) {
+    if ((globalCount ?? 0) >= 60) {
       return new Response(
-        JSON.stringify({ error: "Muitos pedidos em pouco tempo. Tente novamente em 1 minuto." }),
+        JSON.stringify({ error: "Sistema sobrecarregado. Tente novamente em instantes." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
