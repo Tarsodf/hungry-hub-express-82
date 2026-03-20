@@ -96,8 +96,19 @@ const CartPage = () => {
       if (data?.error) { toast.error(data.error); setSending(false); return; }
 
       const message = buildWhatsAppMessage();
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, "_blank");
+      const encodedMsg = encodeURIComponent(message);
+      // Try wa.me first, fall back to web.whatsapp.com
+      const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMsg}`;
+      const opened = window.open(waUrl, "_blank");
+      if (!opened) {
+        // Popup blocked (e.g. iframe) — try web version
+        const webUrl = `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMsg}`;
+        const opened2 = window.open(webUrl, "_blank");
+        if (!opened2) {
+          // Last resort: redirect current page
+          window.location.href = waUrl;
+        }
+      }
 
       toast.success("Pedido enviado com sucesso!");
       clearCart();
