@@ -11,6 +11,8 @@ import MenuPage from "./pages/MenuPage";
 import CartPage from "./pages/CartPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +33,8 @@ const App = () => (
                 <Route path="/cardapio" element={<MenuPage />} />
                 <Route path="/carrinho" element={<CartPage />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

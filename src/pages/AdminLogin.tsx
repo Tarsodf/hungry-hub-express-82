@@ -74,7 +74,11 @@ const AdminLogin = () => {
             </Button>
           </form>
 
-          <Link to="/" className="mt-6 flex items-center justify-center gap-2 font-body text-sm text-muted-foreground hover:text-primary transition-colors">
+          <Link to="/admin/forgot-password" className="mt-4 flex items-center justify-center font-body text-sm text-muted-foreground hover:text-primary transition-colors">
+            Esqueci a minha senha
+          </Link>
+
+          <Link to="/" className="mt-3 flex items-center justify-center gap-2 font-body text-sm text-muted-foreground hover:text-primary transition-colors">
             <ArrowLeft className="h-4 w-4" /> Voltar ao Cardápio
           </Link>
         </div>
