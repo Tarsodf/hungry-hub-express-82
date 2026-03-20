@@ -70,7 +70,7 @@ const MenuPage = () => {
   });
 
   const filteredItems = useMemo(() => {
-    if (activeCategory === "Todos") return menuItems;
+    if (!activeCategory) return menuItems;
     return menuItems.filter((i: any) => i.menu_categories?.name === activeCategory);
   }, [activeCategory, menuItems]);
 
