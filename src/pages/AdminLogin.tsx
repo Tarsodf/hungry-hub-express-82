@@ -7,8 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Lock, ArrowLeft } from "lucide-react";
 
-const ALLOWED_ADMIN_EMAIL = "tarso-souza@hotmail.com";
-
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,9 +17,6 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (email.toLowerCase().trim() !== ALLOWED_ADMIN_EMAIL) {
-        throw new Error("Acesso negado. Email não autorizado.");
-      }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
