@@ -19,6 +19,9 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (email.toLowerCase().trim() !== ALLOWED_ADMIN_EMAIL) {
+        throw new Error("Acesso negado. Email não autorizado.");
+      }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 

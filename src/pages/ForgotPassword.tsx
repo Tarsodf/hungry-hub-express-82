@@ -18,6 +18,9 @@ const ForgotPassword = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (email.toLowerCase().trim() !== ALLOWED_ADMIN_EMAIL) {
+        throw new Error("Email não autorizado para recuperação.");
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
