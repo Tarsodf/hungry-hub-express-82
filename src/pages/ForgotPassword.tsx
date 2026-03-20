@@ -7,8 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, ArrowLeft } from "lucide-react";
 
-const ALLOWED_ADMIN_EMAIL = "tarso-souza@hotmail.com";
-
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,9 +16,6 @@ const ForgotPassword = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (email.toLowerCase().trim() !== ALLOWED_ADMIN_EMAIL) {
-        throw new Error("Email não autorizado para recuperação.");
-      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
