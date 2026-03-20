@@ -24,7 +24,7 @@ const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", 
 
 const MenuPage = () => {
   const [searchParams] = useSearchParams();
-  const initialCat = searchParams.get("categoria") || "Todos";
+  const initialCat = searchParams.get("categoria") || "";
   const [activeCategory, setActiveCategory] = useState(initialCat);
   const { addItem } = useCart();
 
@@ -70,7 +70,7 @@ const MenuPage = () => {
   });
 
   const filteredItems = useMemo(() => {
-    if (activeCategory === "Todos") return menuItems;
+    if (!activeCategory) return menuItems;
     return menuItems.filter((i: any) => i.menu_categories?.name === activeCategory);
   }, [activeCategory, menuItems]);
 
@@ -137,7 +137,7 @@ const MenuPage = () => {
   };
 
   const customizeAddonsTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
-  const categoryNames = ["Todos", ...categories.map((c: any) => c.name)];
+  const categoryNames = categories.map((c: any) => c.name);
 
   return (
     <main className="bg-background min-h-screen">

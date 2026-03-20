@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MapPin, Truck, Flame, Heart, Clock, Phone, Mail } from "lucide-react";
+import { MapPin, Truck, Flame, Heart } from "lucide-react";
 import heroImage from "@/assets/hero-restaurant.jpg";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -128,67 +128,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Contact Section - Horários e Localização */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground md:text-4xl">
-              Visite-nos em <span className="text-primary">Guimarães</span>
-            </h2>
-            <p className="mt-3 font-body text-muted-foreground">
-              Estamos localizados no centro histórico de Guimarães, berço de Portugal
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="glass rounded-xl p-8">
-              <div className="flex items-center gap-2 mb-6">
-                <MapPin className="h-5 w-5 text-primary" />
-                <h3 className="font-display text-lg font-semibold text-foreground">Localização</h3>
-              </div>
-              <div className="space-y-2 font-body text-muted-foreground">
-                <p className="text-foreground font-semibold">Dom Bistro Grill</p>
-                <p>Rua de Santa Maria, 123</p>
-                <p>Centro Histórico</p>
-                <p>4810-445 Guimarães, Portugal</p>
-                <div className="pt-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-primary" />
-                    <span>+351 930 580 520</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-primary" />
-                    <span>contato@dombistrogrill.pt</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass rounded-xl p-8">
-              <div className="flex items-center gap-2 mb-6">
-                <Clock className="h-5 w-5 text-primary" />
-                <h3 className="font-display text-lg font-semibold text-foreground">Horário</h3>
-              </div>
-              <div className="space-y-4 font-body">
-                {[
-                  { day: "Segunda a Sexta", hours: "11:00 - 22:00" },
-                  { day: "Sábado", hours: "11:00 - 23:00" },
-                  { day: "Domingo", hours: "12:00 - 21:00" },
-                ].map((item) => (
-                  <div key={item.day} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{item.day}</span>
-                    <span className="text-foreground font-semibold">{item.hours}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 flex items-center gap-2 rounded-lg bg-secondary px-4 py-3 text-sm text-muted-foreground">
-                <Truck className="h-4 w-4 text-primary" />
-                <span>Entregas em Guimarães e vizinhanças</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </main>
   );
 };
