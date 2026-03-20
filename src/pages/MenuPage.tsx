@@ -24,7 +24,7 @@ const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", 
 
 const MenuPage = () => {
   const [searchParams] = useSearchParams();
-  const initialCat = searchParams.get("categoria") || "";
+  const initialCat = searchParams.get("categoria") || "Pratos Executivos";
   const [activeCategory, setActiveCategory] = useState(initialCat);
   const { addItem } = useCart();
 
