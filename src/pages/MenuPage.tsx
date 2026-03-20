@@ -24,7 +24,7 @@ const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", 
 
 const MenuPage = () => {
   const [searchParams] = useSearchParams();
-  const initialCat = searchParams.get("categoria") || "";
+  const initialCat = searchParams.get("categoria") || "Pratos Executivos";
   const [activeCategory, setActiveCategory] = useState(initialCat);
   const { addItem } = useCart();
 
@@ -196,7 +196,7 @@ const MenuPage = () => {
                   } ${exec && available ? "ring-1 ring-primary/50" : ""}`}
                 >
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="h-48 w-full object-cover" loading="lazy" />
+                    <img src={item.image_url} alt={item.name} className="h-48 w-full object-contain bg-secondary" loading="lazy" />
                   ) : (
                     <div className="h-48 w-full bg-secondary flex items-center justify-center text-4xl">
                       {exec ? "🍽️" : "🍴"}
