@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, ArrowLeft } from "lucide-react";
 
+const ALLOWED_ADMIN_EMAIL = "tarso-souza@hotmail.com";
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
