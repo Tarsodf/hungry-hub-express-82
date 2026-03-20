@@ -137,7 +137,7 @@ const MenuPage = () => {
   };
 
   const customizeAddonsTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
-  const categoryNames = ["Todos", ...categories.map((c: any) => c.name)];
+  const categoryNames = categories.map((c: any) => c.name);
 
   return (
     <main className="bg-background min-h-screen">
