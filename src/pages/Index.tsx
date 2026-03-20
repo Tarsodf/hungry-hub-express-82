@@ -39,17 +39,12 @@ const Index = () => {
               Uma viagem gastronômica pelo Nordeste, Sul e Sudeste do Brasil.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-4 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+            <div className="mt-8 animate-fade-in" style={{ animationDelay: "0.4s" }}>
               <Link to="/cardapio">
-                <Button size="lg" className="bg-primary text-primary-foreground font-body font-semibold px-8 py-6 text-base hover:bg-primary/90">
-                  Ver Cardápio
+                <Button size="lg" className="bg-primary text-primary-foreground font-body font-semibold px-10 py-6 text-base hover:bg-primary/90">
+                  Ver Cardápio Completo
                 </Button>
               </Link>
-              <a href="#sobre">
-                <Button variant="outline" size="lg" className="border-border text-foreground font-body px-8 py-6 text-base hover:bg-secondary">
-                  Nossa História
-                </Button>
-              </a>
             </div>
 
             <div className="mt-12 flex flex-wrap gap-6 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.6s" }}>
@@ -67,50 +62,6 @@ const Index = () => {
           <p className="font-body text-sm text-muted-foreground">
             🔥 Hoje é: <span className="font-semibold text-primary">{DAY_NAMES[today]}</span> — Os Pratos Executivos mudam diariamente. Confira o cardápio do dia!
           </p>
-        </div>
-      </section>
-
-      {/* Category cards */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <h2 className="text-center font-display text-3xl font-bold text-foreground md:text-4xl">
-            Nosso Cardápio
-          </h2>
-          <p className="mt-3 text-center font-body text-muted-foreground">
-            Explore as nossas categorias e descubra sabores irresistíveis
-          </p>
-
-          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { name: "Executivos", emoji: "🍽️", href: "Pratos Executivos" },
-              { name: "Hambúrgueres", emoji: "🍔", href: "Hambúrgueres" },
-              { name: "Espetinhos", emoji: "🍢", href: "Espetinhos" },
-              { name: "Pastéis", emoji: "🥟", href: "Pastéis & Petiscos" },
-              { name: "Bolos & Doces", emoji: "🍰", href: "Bolos & Doces" },
-              { name: "Bebidas", emoji: "🥤", href: "Bebidas" },
-              { name: "Panelinhas", emoji: "🍲", href: "Panelinhas" },
-              { name: "Caldos", emoji: "🥣", href: "Caldos" },
-            ].map((cat) => (
-              <Link
-                key={cat.name}
-                to={`/cardapio?categoria=${encodeURIComponent(cat.href)}`}
-                className="group glass rounded-xl p-6 flex flex-col items-center gap-3 transition-all hover:border-primary/30 menu-card"
-              >
-                <span className="text-4xl">{cat.emoji}</span>
-                <span className="font-body text-sm font-medium text-foreground text-center group-hover:text-primary transition-colors">
-                  {cat.name}
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-10 text-center">
-            <Link to="/cardapio">
-              <Button variant="outline" size="lg" className="font-body border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                Ver Cardápio Completo
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -135,6 +86,10 @@ const Index = () => {
                 Localizado no coração de Guimarães, trazemos os sabores 
                 autênticos do Brasil: desde o churrasco gaúcho até a feijoada carioca, 
                 passando pelos espetinhos nordestinos e doces caseiros.
+              </p>
+
+              <p className="mt-4 font-body text-sm text-muted-foreground leading-relaxed">
+                Todos os menus executivos incluem bebida, sobremesa e café.
               </p>
 
               <div className="mt-8 grid grid-cols-2 gap-4">
@@ -173,7 +128,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Contact Section */}
+      {/* Contact Section - Horários e Localização */}
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
