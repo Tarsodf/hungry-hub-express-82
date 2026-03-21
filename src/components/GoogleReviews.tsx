@@ -174,8 +174,6 @@ const GoogleReviews = () => {
       </div>
     </section>
   );
-});
-
-GoogleReviews.displayName = "GoogleReviews";
+};
 
 export default GoogleReviews;
