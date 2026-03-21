@@ -1,6 +1,6 @@
-import { forwardRef, useEffect, useState } from "react";
 import { Star, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const GOOGLE_REVIEW_URL = "https://g.page/r/CUHpaKo5FWlwEBM/review";
@@ -33,7 +33,7 @@ const formatDate = (dateStr: string) => {
   return `Há ${months} ${months > 1 ? "meses" : "mês"}`;
 };
 
-const GoogleReviews = forwardRef<HTMLElement>((_, ref) => {
+const GoogleReviews = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [page, setPage] = useState(0);
 
@@ -88,7 +88,7 @@ const GoogleReviews = forwardRef<HTMLElement>((_, ref) => {
   if (reviews.length === 0) return null;
 
   return (
-    <section ref={ref} className="bg-secondary/30 py-16">
+    <section className="bg-secondary/30 py-16">
       <div className="container mx-auto px-4">
         <div className="mb-10 text-center">
           <div className="mb-3 flex items-center justify-center gap-2">
@@ -174,8 +174,6 @@ const GoogleReviews = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </section>
   );
-});
-
-GoogleReviews.displayName = "GoogleReviews";
+};
 
 export default GoogleReviews;
