@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
       .from("orders")
       .select("id", { count: "exact", head: true })
       .gte("created_at", windowStart)
-      .eq("customer_phone", input.customer_phone);
+      .eq("customer_ip", clientIp);
 
     if ((ipCount ?? 0) >= 3) {
       return new Response(
