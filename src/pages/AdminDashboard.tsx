@@ -736,7 +736,7 @@ const HistoryView = () => {
     <div className="space-y-6">
       <h2 className="font-display text-xl font-semibold text-foreground">Histórico de Vendas</h2>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Esta Semana", value: `€${stats.weekRevenue.toFixed(2)}` },
           { label: "Este Mês", value: `€${stats.monthRevenue.toFixed(2)}` },
