@@ -1,6 +1,6 @@
+import { forwardRef, useEffect, useState } from "react";
 import { Star, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const GOOGLE_REVIEW_URL = "https://g.page/r/CUHpaKo5FWlwEBM/review";
@@ -28,11 +28,12 @@ const formatDate = (dateStr: string) => {
     const weeks = Math.floor(diffDays / 7);
     return `Há ${weeks} semana${weeks > 1 ? "s" : ""}`;
   }
+
   const months = Math.floor(diffDays / 30);
   return `Há ${months} ${months > 1 ? "meses" : "mês"}`;
 };
 
-const GoogleReviews = () => {
+const GoogleReviews = forwardRef<HTMLElement>((_, ref) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [page, setPage] = useState(0);
 
@@ -45,12 +46,12 @@ const GoogleReviews = () => {
         .select("*")
         .eq("is_visible", true)
         .order("created_at", { ascending: false });
+
       if (data) setReviews(data);
     };
 
     fetchReviews();
 
-    // Realtime subscription
     const channel = supabase
       .channel("reviews-realtime")
       .on(
@@ -65,16 +66,16 @@ const GoogleReviews = () => {
     };
   }, []);
 
-  // Auto-rotate
   useEffect(() => {
     if (totalPages <= 1) return;
+
     const interval = setInterval(() => {
       setPage((prev) => (prev + 1) % totalPages);
     }, ROTATION_INTERVAL);
+
     return () => clearInterval(interval);
   }, [totalPages]);
 
-  // Reset page if out of bounds
   useEffect(() => {
     if (page >= totalPages) setPage(0);
   }, [page, totalPages]);
@@ -87,13 +88,12 @@ const GoogleReviews = () => {
   if (reviews.length === 0) return null;
 
   return (
-    <section className="py-16 bg-secondary/30">
+    <section ref={ref} className="bg-secondary/30 py-16">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-2 mb-3">
+        <div className="mb-10 text-center">
+          <div className="mb-3 flex items-center justify-center gap-2">
             <div className="h-px w-8 bg-primary" />
-            <span className="font-body text-xs uppercase tracking-[0.3em] text-primary font-semibold">
+            <span className="font-body text-xs font-semibold uppercase tracking-[0.3em] text-primary">
               Avaliações
             </span>
             <div className="h-px w-8 bg-primary" />
@@ -101,7 +101,7 @@ const GoogleReviews = () => {
           <h2 className="font-display text-3xl font-bold text-foreground md:text-4xl">
             O Que Dizem os Nossos <span className="text-primary">Clientes</span>
           </h2>
-          <div className="flex items-center justify-center gap-1 mt-3">
+          <div className="mt-3 flex items-center justify-center gap-1">
             {[...Array(5)].map((_, i) => (
               <Star key={i} className="h-5 w-5 fill-primary text-primary" />
             ))}
@@ -109,19 +109,18 @@ const GoogleReviews = () => {
           </div>
         </div>
 
-        {/* Reviews Grid */}
-        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
           {visibleReviews.map((review) => (
             <div
               key={review.id}
-              className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-500 hover:shadow-md animate-fade-in"
+              className="animate-fade-in rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-500 hover:shadow-md"
             >
-              <div className="flex items-center gap-1 mb-3">
+              <div className="mb-3 flex items-center gap-1">
                 {[...Array(review.rating)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-primary text-primary" />
                 ))}
               </div>
-              <p className="font-body text-sm text-muted-foreground leading-relaxed mb-4">
+              <p className="mb-4 font-body text-sm leading-relaxed text-muted-foreground">
                 "{review.text}"
               </p>
               <div className="flex items-center justify-between">
@@ -144,9 +143,8 @@ const GoogleReviews = () => {
           ))}
         </div>
 
-        {/* Dots indicator */}
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-6">
+          <div className="mt-6 flex justify-center gap-2">
             {[...Array(totalPages)].map((_, i) => (
               <button
                 key={i}
@@ -160,13 +158,12 @@ const GoogleReviews = () => {
           </div>
         )}
 
-        {/* CTA */}
         <div className="mt-10 text-center">
           <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer">
             <Button
               variant="outline"
               size="lg"
-              className="font-body font-semibold gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="gap-2 border-primary font-body font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
             >
               <Star className="h-4 w-4" />
               Deixe a Sua Avaliação no Google
@@ -177,6 +174,8 @@ const GoogleReviews = () => {
       </div>
     </section>
   );
-};
+});
+
+GoogleReviews.displayName = "GoogleReviews";
 
 export default GoogleReviews;
