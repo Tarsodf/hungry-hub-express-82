@@ -515,7 +515,7 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
               <Input type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required className="bg-secondary border-border" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="font-body text-sm">Categoria</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
