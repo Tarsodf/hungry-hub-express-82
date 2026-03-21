@@ -32,14 +32,14 @@ const App = () => (
             <div className="flex-1">
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/cardapio" element={<MenuPage />} />
-                <Route path="/carrinho" element={<CartPage />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/cardapio" element={<Suspense fallback={null}><MenuPage /></Suspense>} />
+                <Route path="/carrinho" element={<Suspense fallback={null}><CartPage /></Suspense>} />
+                <Route path="/admin/login" element={<Suspense fallback={null}><AdminLogin /></Suspense>} />
+                <Route path="/admin/forgot-password" element={<Suspense fallback={null}><ForgotPassword /></Suspense>} />
+                <Route path="/reset-password" element={<Suspense fallback={null}><ResetPassword /></Suspense>} />
+                <Route path="/admin" element={<Suspense fallback={null}><ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute></Suspense>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
               </Routes>
             </div>
             <Footer />
