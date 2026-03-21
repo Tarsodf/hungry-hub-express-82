@@ -323,19 +323,20 @@ const MenuManagement = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="font-display text-xl font-semibold text-foreground">Gerenciar Cardápio</h2>
         <Button onClick={() => { setEditingItem(null); setDialogOpen(true); }} className="bg-primary text-primary-foreground font-body">
-          <Plus className="mr-2 h-4 w-4" /> Adicionar Item
+          <Plus className="mr-2 h-4 w-4" /> Adicionar
         </Button>
       </div>
 
-      <div className="glass rounded-xl overflow-hidden">
+      {/* Desktop table */}
+      <div className="glass rounded-xl overflow-hidden hidden md:block">
         <table className="w-full font-body text-sm">
           <thead>
             <tr className="text-xs text-muted-foreground border-b border-border bg-secondary/50">
               <th className="text-left py-3 px-4">Imagem</th>
               <th className="text-left py-3 px-4">Nome</th>
-              <th className="text-left py-3 px-4 hidden md:table-cell">Categoria</th>
+              <th className="text-left py-3 px-4">Categoria</th>
               <th className="text-right py-3 px-4">Preço</th>
-              <th className="text-center py-3 px-4 hidden md:table-cell">Dia</th>
+              <th className="text-center py-3 px-4">Dia</th>
               <th className="text-center py-3 px-4">Ativo</th>
               <th className="text-right py-3 px-4">Ações</th>
             </tr>
@@ -351,9 +352,9 @@ const MenuManagement = () => {
                   )}
                 </td>
                 <td className="py-2 px-4 text-foreground font-medium">{item.name}</td>
-                <td className="py-2 px-4 text-muted-foreground hidden md:table-cell">{(item as any).menu_categories?.name}</td>
+                <td className="py-2 px-4 text-muted-foreground">{(item as any).menu_categories?.name}</td>
                 <td className="py-2 px-4 text-right text-primary font-semibold">€{Number(item.price).toFixed(2)}</td>
-                <td className="py-2 px-4 text-center text-muted-foreground hidden md:table-cell">
+                <td className="py-2 px-4 text-center text-muted-foreground">
                   {item.day_of_week !== null ? DAY_NAMES[item.day_of_week] : "—"}
                 </td>
                 <td className="py-2 px-4 text-center">
@@ -375,6 +376,50 @@ const MenuManagement = () => {
         </table>
         {items.length === 0 && !isLoading && (
           <p className="text-center py-8 text-muted-foreground font-body">Nenhum item no cardápio.</p>
+        )}
+      </div>
+
+      {/* Mobile cards */}
+      <div className="space-y-3 md:hidden">
+        {items.map((item: any) => (
+          <div key={item.id} className="glass rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              {item.image_url ? (
+                <img src={item.image_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover flex-shrink-0" />
+              ) : (
+                <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-xl flex-shrink-0">🍴</div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-body text-sm font-semibold text-foreground truncate">{item.name}</h3>
+                  <span className="font-body text-sm font-bold text-primary flex-shrink-0">€{Number(item.price).toFixed(2)}</span>
+                </div>
+                <p className="font-body text-xs text-muted-foreground mt-0.5">
+                  {(item as any).menu_categories?.name || "Sem categoria"}
+                  {item.day_of_week !== null && ` • ${DAY_NAMES[item.day_of_week]}`}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-2">
+                <Switch checked={item.is_active ?? true} onCheckedChange={(v) => toggleMutation.mutate({ id: item.id, is_active: v })} />
+                <span className="font-body text-xs text-muted-foreground">{item.is_active ? "Ativo" : "Inativo"}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setEditingItem(item); setDialogOpen(true); }}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive" onClick={() => deleteMutation.mutate(item.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && !isLoading && (
+          <div className="glass rounded-xl p-8 text-center">
+            <p className="text-muted-foreground font-body">Nenhum item no cardápio.</p>
+          </div>
         )}
       </div>
 
@@ -450,7 +495,7 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card border-border">
+      <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">{item ? "Editar Item" : "Novo Item"}</DialogTitle>
         </DialogHeader>
@@ -460,7 +505,7 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
             {imageUrl && <img src={imageUrl} alt="Preview" className="mt-2 h-32 w-full rounded-lg object-cover" />}
             <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="mt-2 bg-secondary border-border" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="font-body text-sm">Nome do Prato</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} required className="bg-secondary border-border" />
@@ -470,7 +515,7 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
               <Input type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required className="bg-secondary border-border" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="font-body text-sm">Categoria</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
@@ -585,7 +630,7 @@ const OrderManagement = () => {
         <div className="space-y-3">
           {todayOrders.map((order: any) => (
             <div key={order.id} className="glass rounded-xl p-5">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-body text-sm font-semibold text-foreground">#{order.id.slice(0, 8)}</span>
@@ -628,7 +673,7 @@ const OrderManagement = () => {
                 </div>
 
                 <Select value={order.status} onValueChange={(v) => statusMutation.mutate({ id: order.id, status: v })}>
-                  <SelectTrigger className="w-40 bg-secondary border-border"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-40 bg-secondary border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(statusLabels).map(([k, v]) => (
                       <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -691,7 +736,7 @@ const HistoryView = () => {
     <div className="space-y-6">
       <h2 className="font-display text-xl font-semibold text-foreground">Histórico de Vendas</h2>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Esta Semana", value: `€${stats.weekRevenue.toFixed(2)}` },
           { label: "Este Mês", value: `€${stats.monthRevenue.toFixed(2)}` },
