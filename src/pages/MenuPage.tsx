@@ -263,6 +263,50 @@ const MenuPage = () => {
         )}
       </div>
 
+      {/* Product detail dialog */}
+      <Dialog open={!!detailItem} onOpenChange={(open) => !open && setDetailItem(null)}>
+        <DialogContent className="max-w-lg glass border-border bg-card p-0 overflow-hidden">
+          {detailItem?.image_url ? (
+            <img
+              src={detailItem.image_url}
+              alt={detailItem.name}
+              className="w-full max-h-[50vh] object-contain bg-secondary"
+            />
+          ) : (
+            <div className="w-full h-64 bg-secondary flex items-center justify-center text-6xl">
+              {isExecutivo(detailItem) ? "🍽️" : "🍴"}
+            </div>
+          )}
+          <div className="p-5 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="font-display text-xl font-bold text-foreground">{detailItem?.name}</h2>
+              <span className="font-body text-xl font-bold text-primary whitespace-nowrap">
+                €{Number(detailItem?.price || 0).toFixed(2)}
+              </span>
+            </div>
+            {detailItem?.description && (
+              <p className="font-body text-sm text-muted-foreground">{detailItem.description}</p>
+            )}
+            {detailItem?.ingredients && detailItem.ingredients.length > 0 && (
+              <p className="font-body text-xs text-muted-foreground/70">
+                <span className="font-semibold text-muted-foreground">Ingredientes:</span>{" "}
+                {detailItem.ingredients.join(" · ")}
+              </p>
+            )}
+            <Button
+              className="w-full mt-2 bg-primary text-primary-foreground font-body"
+              onClick={() => {
+                setDetailItem(null);
+                handleQuickAdd(detailItem);
+              }}
+              disabled={detailItem ? !isAvailableToday(detailItem) : true}
+            >
+              <Plus className="mr-1 h-4 w-4" /> Adicionar ao Carrinho
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Customization dialog */}
       <Dialog open={!!customizeItem} onOpenChange={(open) => !open && setCustomizeItem(null)}>
         <DialogContent className="max-w-md glass border-border bg-card">
