@@ -673,7 +673,7 @@ const OrderManagement = () => {
                 </div>
 
                 <Select value={order.status} onValueChange={(v) => statusMutation.mutate({ id: order.id, status: v })}>
-                  <SelectTrigger className="w-40 bg-secondary border-border"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-40 bg-secondary border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(statusLabels).map(([k, v]) => (
                       <SelectItem key={k} value={k}>{v}</SelectItem>
