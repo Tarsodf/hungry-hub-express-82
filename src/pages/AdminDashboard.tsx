@@ -630,7 +630,7 @@ const OrderManagement = () => {
         <div className="space-y-3">
           {todayOrders.map((order: any) => (
             <div key={order.id} className="glass rounded-xl p-5">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-body text-sm font-semibold text-foreground">#{order.id.slice(0, 8)}</span>
