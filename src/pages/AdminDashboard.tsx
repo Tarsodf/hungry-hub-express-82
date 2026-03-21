@@ -79,7 +79,23 @@ const AdminDashboard = () => {
 };
 
 // ---- Dashboard View ----
+type PeriodFilter = "today" | "week" | "month" | "all";
+
+const getStartDate = (period: PeriodFilter): Date | null => {
+  const now = new Date();
+  if (period === "today") { const d = new Date(now); d.setHours(0, 0, 0, 0); return d; }
+  if (period === "week") { const d = new Date(now); d.setDate(now.getDate() - now.getDay()); d.setHours(0, 0, 0, 0); return d; }
+  if (period === "month") { return new Date(now.getFullYear(), now.getMonth(), 1); }
+  return null;
+};
+
 const DashboardView = () => {
+  const queryClient = useQueryClient();
+  const [period, setPeriod] = useState<PeriodFilter>("today");
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purgePassword, setPurgePassword] = useState("");
+  const [purging, setPurging] = useState(false);
+
   const { data: items = [] } = useQuery({
     queryKey: ["admin-menu-items"],
     queryFn: async () => {
@@ -89,48 +105,44 @@ const DashboardView = () => {
     },
   });
 
-  const { data: todayOrders = [] } = useQuery({
-    queryKey: ["admin-today-orders"],
+  const { data: allOrders = [] } = useQuery({
+    queryKey: ["admin-all-orders-dash"],
     queryFn: async () => {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
       const { data, error } = await supabase
         .from("orders")
         .select("*, order_items(*, menu_items(category_id, menu_categories(name)))")
-        .gte("created_at", startOfDay.toISOString())
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  const stats = useMemo(() => {
-    const revenue = todayOrders.reduce((s: number, o: any) => s + Number(o.total), 0);
-    const avgTicket = todayOrders.length > 0 ? revenue / todayOrders.length : 0;
-    return {
-      totalItems: items.length,
-      ordersToday: todayOrders.length,
-      revenue,
-      avgTicket,
-    };
-  }, [items, todayOrders]);
+  const filteredOrders = useMemo(() => {
+    const start = getStartDate(period);
+    if (!start) return allOrders;
+    return allOrders.filter((o: any) => new Date(o.created_at) >= start);
+  }, [allOrders, period]);
 
-  // Sales by category
+  const stats = useMemo(() => {
+    const revenue = filteredOrders.reduce((s: number, o: any) => s + Number(o.total), 0);
+    const avgTicket = filteredOrders.length > 0 ? revenue / filteredOrders.length : 0;
+    return { totalItems: items.length, ordersCount: filteredOrders.length, revenue, avgTicket };
+  }, [items, filteredOrders]);
+
   const categoryStats = useMemo(() => {
     const map: Record<string, number> = {};
-    todayOrders.forEach((o: any) => {
+    filteredOrders.forEach((o: any) => {
       o.order_items?.forEach((oi: any) => {
         const catName = oi.menu_items?.menu_categories?.name || "Outros";
         map[catName] = (map[catName] || 0) + (Number(oi.price) * oi.quantity);
       });
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
-  }, [todayOrders]);
+  }, [filteredOrders]);
 
-  // Top items
   const topItems = useMemo(() => {
     const map: Record<string, { name: string; qty: number; revenue: number }> = {};
-    todayOrders.forEach((o: any) => {
+    filteredOrders.forEach((o: any) => {
       o.order_items?.forEach((oi: any) => {
         const key = oi.name;
         if (!map[key]) map[key] = { name: key, qty: 0, revenue: 0 };
@@ -139,25 +151,61 @@ const DashboardView = () => {
       });
     });
     return Object.values(map).sort((a, b) => b.qty - a.qty).slice(0, 5);
-  }, [todayOrders]);
+  }, [filteredOrders]);
 
   const maxCatRevenue = categoryStats.length > 0 ? categoryStats[0][1] : 1;
+  const periodLabels: Record<PeriodFilter, string> = { today: "Hoje", week: "Esta Semana", month: "Este Mês", all: "Todo Período" };
+  const periodSubs: Record<PeriodFilter, string> = { today: "Desde 00:00", week: "Desde domingo", month: "Desde dia 1", all: "Desde o início" };
 
   const statCards = [
     { label: "Total de Pratos", value: stats.totalItems.toString(), sub: "Itens no cardápio", icon: UtensilsCrossed, color: "text-blue-400" },
-    { label: "Pedidos Hoje", value: stats.ordersToday.toString(), sub: "Desde 00:00", icon: ShoppingCart, color: "text-green-400" },
-    { label: "Faturamento Hoje", value: `€${stats.revenue.toFixed(2)}`, sub: "Total arrecadado", icon: DollarSign, color: "text-primary" },
+    { label: "Pedidos", value: stats.ordersCount.toString(), sub: periodSubs[period], icon: ShoppingCart, color: "text-green-400" },
+    { label: "Faturamento", value: `€${stats.revenue.toFixed(2)}`, sub: periodLabels[period], icon: DollarSign, color: "text-primary" },
     { label: "Ticket Médio", value: `€${stats.avgTicket.toFixed(2)}`, sub: "Por pedido", icon: TrendingUp, color: "text-purple-400" },
   ];
 
+  const handlePurge = async () => {
+    setPurging(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("Usuário não encontrado");
+      const { error: authError } = await supabase.auth.signInWithPassword({ email: user.email, password: purgePassword });
+      if (authError) throw new Error("Senha incorreta");
+      const { error: e1 } = await supabase.from("order_items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (e2) throw e2;
+      toast.success("Todos os dados de pedidos foram apagados!");
+      queryClient.invalidateQueries({ queryKey: ["admin-all-orders-dash"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-all-orders-history"] });
+      setPurgeOpen(false);
+      setPurgePassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao limpar dados");
+    } finally {
+      setPurging(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="font-display text-xl font-semibold text-foreground">Dashboard</h2>
-        <p className="font-body text-xs text-muted-foreground">Guimarães, Portugal</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1 bg-secondary/50 rounded-lg p-1">
+            {(["today", "week", "month", "all"] as PeriodFilter[]).map((p) => (
+              <button key={p} onClick={() => setPeriod(p)} className={`px-3 py-1.5 rounded-md font-body text-xs font-medium transition-all ${period === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                {periodLabels[p]}
+              </button>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setPurgeOpen(true)}>
+            <Trash2 className="mr-1 h-3.5 w-3.5" /> Limpar
+          </Button>
+        </div>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map((stat) => (
           <div key={stat.label} className="glass rounded-xl p-5">
@@ -171,15 +219,13 @@ const DashboardView = () => {
         ))}
       </div>
 
-      {/* Charts row */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Sales by category */}
         <div className="glass rounded-xl p-5">
           <h3 className="font-body text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
-            <BarChart3 className="h-4 w-4 text-primary" /> Vendas por Categoria (Hoje)
+            <BarChart3 className="h-4 w-4 text-primary" /> Vendas por Categoria ({periodLabels[period]})
           </h3>
           {categoryStats.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma venda hoje</p>
+            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma venda no período</p>
           ) : (
             <div className="space-y-3">
               {categoryStats.map(([cat, revenue]) => (
@@ -189,31 +235,22 @@ const DashboardView = () => {
                     <span className="text-foreground font-semibold">€{revenue.toFixed(2)}</span>
                   </div>
                   <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${(revenue / maxCatRevenue) * 100}%` }}
-                    />
+                    <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${(revenue / maxCatRevenue) * 100}%` }} />
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* Top items */}
         <div className="glass rounded-xl p-5">
-          <h3 className="font-body text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
-            🏆 Pratos Mais Vendidos
-          </h3>
+          <h3 className="font-body text-sm font-semibold text-foreground flex items-center gap-2 mb-4">🏆 Pratos Mais Vendidos</h3>
           {topItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma venda hoje</p>
+            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma venda no período</p>
           ) : (
             <div className="space-y-3">
               {topItems.map((item, i) => (
                 <div key={item.name} className="flex items-center gap-3">
-                  <span className={`font-body text-sm font-bold ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
-                    #{i + 1}
-                  </span>
+                  <span className={`font-body text-sm font-bold ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-body text-sm text-foreground truncate">{item.name}</p>
                     <p className="font-body text-xs text-muted-foreground">{item.qty}x vendidos</p>
@@ -226,35 +263,31 @@ const DashboardView = () => {
         </div>
       </div>
 
-      {/* Recent orders */}
       <div className="glass rounded-xl p-5">
         <h3 className="font-body text-sm font-semibold text-foreground mb-4">Pedidos Recentes</h3>
-        {todayOrders.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Nenhum pedido hoje</p>
+        {filteredOrders.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Nenhum pedido no período</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full font-body text-sm">
               <thead>
                 <tr className="text-xs text-muted-foreground border-b border-border">
-                  <th className="text-left py-2">ID</th>
-                  <th className="text-left py-2">Cliente</th>
-                  <th className="text-left py-2">Itens</th>
-                  <th className="text-right py-2">Total</th>
-                  <th className="text-right py-2">Hora</th>
-                  <th className="text-right py-2">Status</th>
+                  <th className="text-left py-2">ID</th><th className="text-left py-2">Cliente</th><th className="text-left py-2">Itens</th>
+                  <th className="text-right py-2">Total</th><th className="text-right py-2">Data/Hora</th><th className="text-right py-2">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {todayOrders.slice(0, 10).map((order: any) => (
+                {filteredOrders.slice(0, 15).map((order: any) => (
                   <tr key={order.id} className="border-b border-border/50">
                     <td className="py-2 text-muted-foreground">#{order.id.slice(0, 6)}</td>
                     <td className="py-2 text-foreground">{order.customer_name || "—"}</td>
                     <td className="py-2 text-muted-foreground">{order.order_items?.length || 0}</td>
                     <td className="py-2 text-right text-primary font-semibold">€{Number(order.total).toFixed(2)}</td>
-                    <td className="py-2 text-right text-muted-foreground">{new Date(order.created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</td>
-                    <td className="py-2 text-right">
-                      <StatusBadge status={order.status} />
+                    <td className="py-2 text-right text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit" })}{" "}
+                      {new Date(order.created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}
                     </td>
+                    <td className="py-2 text-right"><StatusBadge status={order.status} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -262,6 +295,29 @@ const DashboardView = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={purgeOpen} onOpenChange={setPurgeOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> Limpar Dados
+            </DialogTitle>
+            <DialogDescription className="font-body text-sm text-muted-foreground">
+              Esta ação irá apagar <strong>todos os pedidos</strong> permanentemente. Não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); handlePurge(); }} className="space-y-4">
+            <div>
+              <Label className="font-body text-sm">Confirme com a sua senha</Label>
+              <Input type="password" value={purgePassword} onChange={(e) => setPurgePassword(e.target.value)} placeholder="Digite a sua senha de admin" required className="bg-secondary border-border mt-1" />
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => { setPurgeOpen(false); setPurgePassword(""); }}>Cancelar</Button>
+              <Button type="submit" variant="destructive" className="flex-1" disabled={purging || !purgePassword}>{purging ? "A apagar..." : "Apagar Tudo"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
