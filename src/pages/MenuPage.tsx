@@ -28,6 +28,9 @@ const MenuPage = () => {
   const [activeCategory, setActiveCategory] = useState(initialCat);
   const { addItem } = useCart();
 
+  // Product detail dialog state
+  const [detailItem, setDetailItem] = useState<any>(null);
+
   // Customization dialog state
   const [customizeItem, setCustomizeItem] = useState<any>(null);
   const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
