@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 const GOOGLE_REVIEW_URL =
   "https://www.google.com/maps/place/Dom+Bistr%C3%B4+Grill/@41.4415398,-8.2936489,17z/data=!4m8!3m7!1s0xd24ef2ebb583af3:0x70691539aa68e941!8m2!3d41.4415358!4d-8.291074!9m1!1b1!16s%2Fg%2F11zj8dhdkm";
 
-const ROTATION_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const ROTATION_INTERVAL = 30 * 1000; // 30 seconds
 const REVIEWS_PER_PAGE = 3;
 
 type Review = {
