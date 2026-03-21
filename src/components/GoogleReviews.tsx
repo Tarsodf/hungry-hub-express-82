@@ -33,7 +33,7 @@ const formatDate = (dateStr: string) => {
   return `Há ${months} ${months > 1 ? "meses" : "mês"}`;
 };
 
-const GoogleReviews = forwardRef<HTMLElement>((_, ref) => {
+const GoogleReviews = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [page, setPage] = useState(0);
 
