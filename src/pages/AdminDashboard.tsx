@@ -495,7 +495,7 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card border-border">
+      <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">{item ? "Editar Item" : "Novo Item"}</DialogTitle>
         </DialogHeader>
