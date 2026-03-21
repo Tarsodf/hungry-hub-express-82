@@ -199,9 +199,18 @@ const MenuPage = () => {
                   } ${exec && available ? "ring-1 ring-primary/50" : ""}`}
                 >
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="h-48 w-full object-contain bg-secondary" loading="lazy" />
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="h-48 w-full object-contain bg-secondary cursor-pointer transition-transform hover:scale-105"
+                      loading="lazy"
+                      onClick={() => setDetailItem(item)}
+                    />
                   ) : (
-                    <div className="h-48 w-full bg-secondary flex items-center justify-center text-4xl">
+                    <div
+                      className="h-48 w-full bg-secondary flex items-center justify-center text-4xl cursor-pointer"
+                      onClick={() => setDetailItem(item)}
+                    >
                       {exec ? "🍽️" : "🍴"}
                     </div>
                   )}
