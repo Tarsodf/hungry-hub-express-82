@@ -1,86 +1,91 @@
 import { Star, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const GOOGLE_REVIEW_URL =
   "https://www.google.com/maps/place/Dom+Bistr%C3%B4+Grill/@41.4415398,-8.2936489,17z/data=!4m8!3m7!1s0xd24ef2ebb583af3:0x70691539aa68e941!8m2!3d41.4415358!4d-8.291074!9m1!1b1!16s%2Fg%2F11zj8dhdkm";
 
 const ROTATION_INTERVAL = 5 * 60 * 1000; // 5 minutes
-
-const allReviews = [
-  {
-    name: "Ana Silva",
-    rating: 5,
-    text: "Comida brasileira incrível! Os espetinhos são os melhores de Guimarães. Ambiente acolhedor e atendimento excelente.",
-    date: "Há 2 semanas",
-  },
-  {
-    name: "Carlos Mendes",
-    rating: 5,
-    text: "Melhor restaurante brasileiro em Portugal! A feijoada é autêntica e o preço é muito justo. Recomendo!",
-    date: "Há 1 mês",
-  },
-  {
-    name: "Maria Santos",
-    rating: 5,
-    text: "Adorei o menu executivo, muito completo com bebida, sobremesa e café. Voltarei com certeza!",
-    date: "Há 3 semanas",
-  },
-  {
-    name: "Pedro Oliveira",
-    rating: 5,
-    text: "Os hambúrgueres artesanais são fantásticos! Ingredientes frescos e muito sabor. O melhor de Guimarães.",
-    date: "Há 1 mês",
-  },
-  {
-    name: "Joana Costa",
-    rating: 5,
-    text: "Experimentei os pastéis e as sobremesas, tudo delicioso! O atendimento é muito simpático e rápido.",
-    date: "Há 2 meses",
-  },
-  {
-    name: "Ricardo Ferreira",
-    rating: 5,
-    text: "Entrega rápida e comida quentinha. O prato executivo de quinta-feira é incrível. Já sou cliente fiel!",
-    date: "Há 3 semanas",
-  },
-  {
-    name: "Beatriz Almeida",
-    rating: 5,
-    text: "Ambiente muito agradável e comida com sabor autêntico do Brasil. Os espetinhos na brasa são divinos!",
-    date: "Há 2 meses",
-  },
-  {
-    name: "Tiago Rodrigues",
-    rating: 5,
-    text: "Surpreendeu-me pela qualidade! Porções generosas e preço justo. A picanha estava perfeita.",
-    date: "Há 1 mês",
-  },
-  {
-    name: "Fernanda Lima",
-    rating: 5,
-    text: "Matou a minha saudade do Brasil! Tudo muito bem feito, desde a entrada até à sobremesa. Nota 10!",
-    date: "Há 3 meses",
-  },
-];
-
 const REVIEWS_PER_PAGE = 3;
 
+type Review = {
+  id: string;
+  name: string;
+  rating: number;
+  text: string;
+  created_at: string;
+};
+
+const formatDate = (dateStr: string) => {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 1) return "Hoje";
+  if (diffDays < 7) return `Há ${diffDays} dia${diffDays > 1 ? "s" : ""}`;
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `Há ${weeks} semana${weeks > 1 ? "s" : ""}`;
+  }
+  const months = Math.floor(diffDays / 30);
+  return `Há ${months} ${months > 1 ? "meses" : "mês"}`;
+};
+
 const GoogleReviews = () => {
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [page, setPage] = useState(0);
-  const totalPages = Math.ceil(allReviews.length / REVIEWS_PER_PAGE);
+
+  const totalPages = Math.max(1, Math.ceil(reviews.length / REVIEWS_PER_PAGE));
 
   useEffect(() => {
+    const fetchReviews = async () => {
+      const { data } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("is_visible", true)
+        .order("created_at", { ascending: false });
+      if (data) setReviews(data);
+    };
+
+    fetchReviews();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel("reviews-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reviews" },
+        () => fetchReviews()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Auto-rotate
+  useEffect(() => {
+    if (totalPages <= 1) return;
     const interval = setInterval(() => {
       setPage((prev) => (prev + 1) % totalPages);
     }, ROTATION_INTERVAL);
     return () => clearInterval(interval);
   }, [totalPages]);
 
-  const visibleReviews = allReviews.slice(
+  // Reset page if out of bounds
+  useEffect(() => {
+    if (page >= totalPages) setPage(0);
+  }, [page, totalPages]);
+
+  const visibleReviews = reviews.slice(
     page * REVIEWS_PER_PAGE,
     page * REVIEWS_PER_PAGE + REVIEWS_PER_PAGE
   );
+
+  if (reviews.length === 0) return null;
 
   return (
     <section className="py-16 bg-secondary/30">
@@ -106,10 +111,10 @@ const GoogleReviews = () => {
         </div>
 
         {/* Reviews Grid */}
-        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto transition-opacity duration-500">
-          {visibleReviews.map((review, index) => (
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+          {visibleReviews.map((review) => (
             <div
-              key={`${page}-${index}`}
+              key={review.id}
               className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-500 hover:shadow-md animate-fade-in"
             >
               <div className="flex items-center gap-1 mb-3">
@@ -123,7 +128,9 @@ const GoogleReviews = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-body text-sm font-semibold text-foreground">{review.name}</p>
-                  <p className="font-body text-xs text-muted-foreground">{review.date}</p>
+                  <p className="font-body text-xs text-muted-foreground">
+                    {formatDate(review.created_at)}
+                  </p>
                 </div>
                 <img
                   src="https://www.google.com/favicon.ico"
@@ -139,18 +146,20 @@ const GoogleReviews = () => {
         </div>
 
         {/* Dots indicator */}
-        <div className="flex justify-center gap-2 mt-6">
-          {[...Array(totalPages)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setPage(i)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === page ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"
-              }`}
-              aria-label={`Ver avaliações ${i + 1}`}
-            />
-          ))}
-        </div>
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-6">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === page ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"
+                }`}
+                aria-label={`Ver avaliações ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* CTA */}
         <div className="mt-10 text-center">
