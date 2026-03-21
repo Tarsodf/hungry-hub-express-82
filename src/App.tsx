@@ -7,14 +7,16 @@ import { CartProvider } from "@/contexts/CartContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Index from "./pages/Index";
-import MenuPage from "./pages/MenuPage";
-import CartPage from "./pages/CartPage";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import ProtectedRoute from "./components/ProtectedRoute";
-import NotFound from "./pages/NotFound";
+import { lazy, Suspense } from "react";
+
+const MenuPage = lazy(() => import("./pages/MenuPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
