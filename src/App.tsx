@@ -7,14 +7,16 @@ import { CartProvider } from "@/contexts/CartContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Index from "./pages/Index";
-import MenuPage from "./pages/MenuPage";
-import CartPage from "./pages/CartPage";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import ProtectedRoute from "./components/ProtectedRoute";
-import NotFound from "./pages/NotFound";
+import { lazy, Suspense } from "react";
+
+const MenuPage = lazy(() => import("./pages/MenuPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -30,14 +32,14 @@ const App = () => (
             <div className="flex-1">
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/cardapio" element={<MenuPage />} />
-                <Route path="/carrinho" element={<CartPage />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/cardapio" element={<Suspense fallback={null}><MenuPage /></Suspense>} />
+                <Route path="/carrinho" element={<Suspense fallback={null}><CartPage /></Suspense>} />
+                <Route path="/admin/login" element={<Suspense fallback={null}><AdminLogin /></Suspense>} />
+                <Route path="/admin/forgot-password" element={<Suspense fallback={null}><ForgotPassword /></Suspense>} />
+                <Route path="/reset-password" element={<Suspense fallback={null}><ResetPassword /></Suspense>} />
+                <Route path="/admin" element={<Suspense fallback={null}><ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute></Suspense>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
               </Routes>
             </div>
             <Footer />
