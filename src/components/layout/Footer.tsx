@@ -1,4 +1,4 @@
-import { MapPin, Clock, Phone, Mail, Truck } from "lucide-react";
+import { MapPin, Clock, Phone, Mail, Truck, Instagram } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -37,8 +37,12 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
-                <span>contato@dombistrogrill.pt</span>
+                <span>bistrogrillr@gmail.com</span>
               </div>
+              <a href="https://www.instagram.com/dombistrogrill" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
+                <Instagram className="h-4 w-4 text-primary" />
+                <span>@dombistrogrill</span>
+              </a>
             </div>
           </div>
 
