@@ -17,6 +17,7 @@ const Index = () => {
           alt="Dom Bistro Grill - Comida brasileira autêntica em Guimarães"
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/30" />
 
