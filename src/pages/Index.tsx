@@ -130,6 +130,9 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Google Reviews */}
+      <GoogleReviews />
+
     </main>
   );
 };
