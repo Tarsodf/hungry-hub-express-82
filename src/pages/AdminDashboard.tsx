@@ -505,7 +505,7 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
             {imageUrl && <img src={imageUrl} alt="Preview" className="mt-2 h-32 w-full rounded-lg object-cover" />}
             <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="mt-2 bg-secondary border-border" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="font-body text-sm">Nome do Prato</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} required className="bg-secondary border-border" />
