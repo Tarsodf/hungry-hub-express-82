@@ -88,7 +88,7 @@ const GoogleReviews = () => {
   if (reviews.length === 0) return null;
 
   return (
-    <section ref={ref} className="bg-secondary/30 py-16">
+    <section className="bg-secondary/30 py-16">
       <div className="container mx-auto px-4">
         <div className="mb-10 text-center">
           <div className="mb-3 flex items-center justify-center gap-2">
