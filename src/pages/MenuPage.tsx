@@ -274,7 +274,7 @@ const MenuPage = () => {
             />
           ) : (
             <div className="w-full h-64 bg-secondary flex items-center justify-center text-6xl">
-              {isExecutivo(detailItem) ? "🍽️" : "🍴"}
+              {detailItem && isExecutivo(detailItem) ? "🍽️" : "🍴"}
             </div>
           )}
           <div className="p-5 space-y-3">
