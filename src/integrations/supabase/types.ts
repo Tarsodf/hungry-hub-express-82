@@ -176,6 +176,7 @@ export type Database = {
           address: string | null
           created_at: string
           customer_email: string | null
+          customer_ip: string | null
           customer_name: string | null
           customer_phone: string | null
           delivery_mode: string
@@ -191,6 +192,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           customer_email?: string | null
+          customer_ip?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           delivery_mode?: string
@@ -206,6 +208,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           customer_email?: string | null
+          customer_ip?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           delivery_mode?: string
