@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Truck, Flame, Heart } from "lucide-react";
+import GoogleReviews from "@/components/GoogleReviews";
 const heroImage = "/hero-restaurant.jpg";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -128,6 +129,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Google Reviews */}
+      <GoogleReviews />
 
     </main>
   );
