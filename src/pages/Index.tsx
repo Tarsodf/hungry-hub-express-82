@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MapPin, Truck, Flame, Heart } from "lucide-react";
+import { MapPin, Truck, Flame, Heart, Star, ExternalLink } from "lucide-react";
 const heroImage = "/hero-restaurant.jpg";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];

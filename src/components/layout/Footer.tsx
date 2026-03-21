@@ -28,9 +28,9 @@ const Footer = () => {
               <MapPin className="h-4 w-4 text-primary" /> Localização
             </h4>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Rua de Santa Maria, 123</p>
-              <p>Centro Histórico</p>
-              <p>4810-445 Guimarães, Portugal</p>
+              <p>Alam São Damasco - S. Francisco</p>
+              <p>Centro 35, N/A</p>
+              <p>4810-286 Guimarães, Portugal</p>
               <div className="flex items-center gap-2 pt-2">
                 <Phone className="h-4 w-4 text-primary" />
                 <span>+351 930 580 520</span>
