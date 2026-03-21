@@ -1,6 +1,6 @@
-import { forwardRef, useEffect, useState } from "react";
 import { Star, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const GOOGLE_REVIEW_URL = "https://g.page/r/CUHpaKo5FWlwEBM/review";
