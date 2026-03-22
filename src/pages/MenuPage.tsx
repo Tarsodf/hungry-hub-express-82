@@ -116,7 +116,7 @@ const MenuPage = () => {
   const handleQuickAdd = (item: any) => {
     const itemAddons = getItemAddons(item);
     const hasIngredients = item.ingredients && item.ingredients.length > 0;
-    const needsMeatPoint = isExecutivo(item) || item.menu_categories?.name === "Hambúrgueres";
+    const needsMeatPoint = isExecutivo(item) || item.menu_categories?.name === "Hambúrgueres" || item.menu_categories?.name === "Pratos Executivos";
     if (itemAddons.length > 0 || hasIngredients || needsMeatPoint) {
       openCustomize(item);
     } else {
@@ -321,7 +321,7 @@ const MenuPage = () => {
           </DialogHeader>
           <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
             {/* Meat point */}
-            {customizeItem && (isExecutivo(customizeItem) || customizeItem.menu_categories?.name === "Hambúrgueres") && (
+            {customizeItem && (isExecutivo(customizeItem) || customizeItem.menu_categories?.name === "Hambúrgueres" || customizeItem.menu_categories?.name === "Pratos Executivos") && (
               <div className="glass rounded-lg p-4">
                 <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
                   🥩 Ponto da Carne
