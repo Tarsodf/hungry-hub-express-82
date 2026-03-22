@@ -326,7 +326,7 @@ const MenuPage = () => {
           </DialogHeader>
           <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
             {/* Meat point */}
-            {customizeItem && (() => { const mk = ['carne', 'picanha', 'bife', 'hambúrguer', 'burger', 'frango', 'porco', 'costela', 'entrecôte', 'lombo', 'vitela', 'borrego', 'prego', 'secretos']; const t = `${customizeItem.name} ${customizeItem.description || ''} ${(customizeItem.ingredients || []).join(' ')}`.toLowerCase(); return mk.some(k => t.includes(k)); })() && (
+            {customizeItem && hasMeat(customizeItem) && (
               <div className="glass rounded-lg p-4">
                 <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
                   🥩 Ponto da Carne
