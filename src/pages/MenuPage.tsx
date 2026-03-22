@@ -82,6 +82,11 @@ const MenuPage = () => {
     return addons.filter((a: any) => a.category_id === catId);
   };
 
+  const MEAT_KEYWORDS = ['carne', 'picanha', 'bife', 'hambúrguer', 'burger', 'frango', 'porco', 'costela', 'entrecôte', 'lombo', 'vitela', 'borrego', 'prego', 'secretos'];
+  const hasMeat = (item: any) => {
+    const t = `${item.name} ${item.description || ''} ${(item.ingredients || []).join(' ')}`.toLowerCase();
+    return MEAT_KEYWORDS.some(k => t.includes(k));
+  };
   const isExecutivo = (item: any) => item.day_of_week !== null && item.day_of_week !== undefined;
   const isAvailableToday = (item: any) => !isExecutivo(item) || item.day_of_week === today;
 
@@ -116,7 +121,7 @@ const MenuPage = () => {
   const handleQuickAdd = (item: any) => {
     const itemAddons = getItemAddons(item);
     const hasIngredients = item.ingredients && item.ingredients.length > 0;
-    const needsMeatPoint = isExecutivo(item) || item.menu_categories?.name === "Hambúrgueres" || item.menu_categories?.name === "Pratos Executivos";
+    const needsMeatPoint = hasMeat(item);
     if (itemAddons.length > 0 || hasIngredients || needsMeatPoint) {
       openCustomize(item);
     } else {
@@ -321,7 +326,7 @@ const MenuPage = () => {
           </DialogHeader>
           <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
             {/* Meat point */}
-            {customizeItem && (isExecutivo(customizeItem) || customizeItem.menu_categories?.name === "Hambúrgueres" || customizeItem.menu_categories?.name === "Pratos Executivos") && (
+            {customizeItem && hasMeat(customizeItem) && (
               <div className="glass rounded-lg p-4">
                 <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
                   🥩 Ponto da Carne
