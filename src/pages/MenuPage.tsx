@@ -203,22 +203,29 @@ const MenuPage = () => {
                     !available ? "disabled-day" : ""
                   } ${exec && available ? "ring-1 ring-primary/50" : ""}`}
                 >
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.name}
-                      className="h-48 w-full object-contain bg-secondary cursor-pointer transition-transform hover:scale-105"
-                      loading="lazy"
-                      onClick={() => setDetailItem(item)}
-                    />
-                  ) : (
-                    <div
-                      className="h-48 w-full bg-secondary flex items-center justify-center text-4xl cursor-pointer"
-                      onClick={() => setDetailItem(item)}
-                    >
-                      {exec ? "🍽️" : "🍴"}
-                    </div>
-                  )}
+                  <div className="relative">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="h-48 w-full object-contain bg-secondary cursor-pointer transition-transform hover:scale-105"
+                        loading="lazy"
+                        onClick={() => setDetailItem(item)}
+                      />
+                    ) : (
+                      <div
+                        className="h-48 w-full bg-secondary flex items-center justify-center text-4xl cursor-pointer"
+                        onClick={() => setDetailItem(item)}
+                      >
+                        {exec ? "🍽️" : "🍴"}
+                      </div>
+                    )}
+                    {item.image_url && (
+                      <span className="absolute bottom-1 right-2 text-[10px] text-muted-foreground/70 italic">
+                        *Imagem meramente ilustrativa
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
