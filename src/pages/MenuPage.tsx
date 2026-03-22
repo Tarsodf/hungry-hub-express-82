@@ -116,7 +116,7 @@ const MenuPage = () => {
   const handleQuickAdd = (item: any) => {
     const itemAddons = getItemAddons(item);
     const hasIngredients = item.ingredients && item.ingredients.length > 0;
-    const needsMeatPoint = isExecutivo(item) || item.menu_categories?.name === "Hambúrgueres";
+    const needsMeatPoint = isExecutivo(item) || item.menu_categories?.name === "Hambúrgueres" || item.menu_categories?.name === "Pratos Executivos";
     if (itemAddons.length > 0 || hasIngredients || needsMeatPoint) {
       openCustomize(item);
     } else {
