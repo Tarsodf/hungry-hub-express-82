@@ -221,7 +221,7 @@ const MenuPage = () => {
                       </div>
                     )}
                     {item.image_url && (
-                      <span className="absolute bottom-1 right-2 text-[10px] text-muted-foreground/70 italic">
+                      <span className="absolute bottom-1 right-2 text-[10px] text-foreground/80 italic font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
                         *Imagem meramente ilustrativa
                       </span>
                     )}
