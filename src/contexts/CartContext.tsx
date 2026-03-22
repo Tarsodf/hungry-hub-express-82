@@ -60,6 +60,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [orderNotes, setOrderNotes] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [deliveryFee, setDeliveryFeeState] = useState(0);
+  const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null);
+
+  const setDeliveryFee = (fee: number, distance: number) => {
+    setDeliveryFeeState(fee);
+    setDeliveryDistance(distance);
+  };
 
   const addItem = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prev) => {
