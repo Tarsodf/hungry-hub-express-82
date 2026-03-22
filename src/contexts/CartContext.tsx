@@ -31,6 +31,9 @@ interface CartContextType {
   clearCart: () => void;
   subtotal: number;
   serviceFee: number;
+  deliveryFee: number;
+  deliveryDistance: number | null;
+  setDeliveryFee: (fee: number, distance: number) => void;
   total: number;
   itemCount: number;
   deliveryMode: "delivery" | "pickup";
