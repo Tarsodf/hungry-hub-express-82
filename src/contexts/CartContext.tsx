@@ -114,14 +114,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return sum + (i.price + addonsTotal) * i.quantity;
   }, 0);
   const serviceFee = items.length > 0 ? SERVICE_FEE : 0;
-  const total = subtotal + serviceFee;
+  const actualDeliveryFee = deliveryMode === "delivery" ? deliveryFee : 0;
+  const total = subtotal + serviceFee + actualDeliveryFee;
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
     <CartContext.Provider
       value={{
         items, addItem, removeItem, updateQuantity, clearCart,
-        subtotal, serviceFee, total, itemCount,
+        subtotal, serviceFee, deliveryFee: actualDeliveryFee, deliveryDistance, setDeliveryFee, total, itemCount,
         deliveryMode, setDeliveryMode,
         address, setAddress, orderNotes, setOrderNotes,
         customerName, setCustomerName, customerPhone, setCustomerPhone,
