@@ -31,6 +31,9 @@ interface CartContextType {
   clearCart: () => void;
   subtotal: number;
   serviceFee: number;
+  deliveryFee: number;
+  deliveryDistance: number | null;
+  setDeliveryFee: (fee: number, distance: number) => void;
   total: number;
   itemCount: number;
   deliveryMode: "delivery" | "pickup";
@@ -57,6 +60,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [orderNotes, setOrderNotes] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [deliveryFee, setDeliveryFeeState] = useState(0);
+  const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null);
+
+  const setDeliveryFee = (fee: number, distance: number) => {
+    setDeliveryFeeState(fee);
+    setDeliveryDistance(distance);
+  };
 
   const addItem = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prev) => {
@@ -104,14 +114,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return sum + (i.price + addonsTotal) * i.quantity;
   }, 0);
   const serviceFee = items.length > 0 ? SERVICE_FEE : 0;
-  const total = subtotal + serviceFee;
+  const actualDeliveryFee = deliveryMode === "delivery" ? deliveryFee : 0;
+  const total = subtotal + serviceFee + actualDeliveryFee;
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
     <CartContext.Provider
       value={{
         items, addItem, removeItem, updateQuantity, clearCart,
-        subtotal, serviceFee, total, itemCount,
+        subtotal, serviceFee, deliveryFee: actualDeliveryFee, deliveryDistance, setDeliveryFee, total, itemCount,
         deliveryMode, setDeliveryMode,
         address, setAddress, orderNotes, setOrderNotes,
         customerName, setCustomerName, customerPhone, setCustomerPhone,

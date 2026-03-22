@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import DeliveryFeeCalculator from "@/components/DeliveryFeeCalculator";
 
 const WHATSAPP_NUMBER = "351930580520";
 
 const CartPage = () => {
   const {
-    items, removeItem, updateQuantity, subtotal, serviceFee, total, itemCount,
+    items, removeItem, updateQuantity, subtotal, serviceFee, deliveryFee, deliveryDistance, setDeliveryFee, total, itemCount,
     deliveryMode, setDeliveryMode, address, setAddress,
     orderNotes, setOrderNotes, customerName, setCustomerName,
     customerPhone, setCustomerPhone, clearCart,
@@ -49,6 +50,9 @@ const CartPage = () => {
     msg += `\n━━━━━━━━━━━━━━━\n`;
     msg += `💰 Subtotal: €${subtotal.toFixed(2)}\n`;
     msg += `📋 Taxa de serviço: €${serviceFee.toFixed(2)}\n`;
+    if (deliveryMode === "delivery" && deliveryFee > 0) {
+      msg += `🚚 Taxa de entrega: €${deliveryFee.toFixed(2)}${deliveryDistance ? ` (${deliveryDistance.toFixed(1)} km)` : ""}\n`;
+    }
     msg += `🏷️ *Total: €${total.toFixed(2)}*\n`;
     if (orderNotes) {
       msg += `\n📝 *Observações:* ${orderNotes}\n`;
@@ -63,6 +67,7 @@ const CartPage = () => {
     if (!customerName.trim() || customerName.trim().length > 100) errs.customerName = "Nome obrigatório (máx. 100 caracteres)";
     if (!customerPhone.trim() || !/^\+?[0-9\s]{7,20}$/.test(customerPhone.trim())) errs.customerPhone = "Telefone inválido";
     if (deliveryMode === "delivery" && (!address.trim() || address.trim().length > 200)) errs.address = "Endereço obrigatório (máx. 200 caracteres)";
+    if (deliveryMode === "delivery" && deliveryDistance === null) errs.delivery = "Use a localização para calcular a taxa de entrega";
     if (orderNotes.length > 500) errs.orderNotes = "Observações: máx. 500 caracteres";
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -97,15 +102,12 @@ const CartPage = () => {
 
       const message = buildWhatsAppMessage();
       const encodedMsg = encodeURIComponent(message);
-      // Try wa.me first, fall back to web.whatsapp.com
       const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMsg}`;
       const opened = window.open(waUrl, "_blank");
       if (!opened) {
-        // Popup blocked (e.g. iframe) — try web version
         const webUrl = `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMsg}`;
         const opened2 = window.open(webUrl, "_blank");
         if (!opened2) {
-          // Last resort: redirect current page
           window.location.href = waUrl;
         }
       }
@@ -214,11 +216,19 @@ const CartPage = () => {
                   </div>
                 </div>
                 {deliveryMode === "delivery" && (
-                  <div>
-                    <Label htmlFor="address" className="font-body text-sm text-muted-foreground">Endereço de entrega *</Label>
-                    <Input id="address" value={address} onChange={(e) => setAddress(e.target.value.slice(0, 200))} placeholder="Rua, número, andar..." className="mt-1 bg-secondary border-border text-foreground" maxLength={200} />
-                    {errors.address && <p className="text-xs text-destructive mt-1">{errors.address}</p>}
-                  </div>
+                  <>
+                    <div>
+                      <Label htmlFor="address" className="font-body text-sm text-muted-foreground">Endereço de entrega *</Label>
+                      <Input id="address" value={address} onChange={(e) => setAddress(e.target.value.slice(0, 200))} placeholder="Rua, número, andar..." className="mt-1 bg-secondary border-border text-foreground" maxLength={200} />
+                      {errors.address && <p className="text-xs text-destructive mt-1">{errors.address}</p>}
+                    </div>
+                    <DeliveryFeeCalculator
+                      onFeeCalculated={setDeliveryFee}
+                      currentFee={deliveryFee > 0 ? deliveryFee : null}
+                      currentDistance={deliveryDistance}
+                    />
+                    {errors.delivery && <p className="text-xs text-destructive">{errors.delivery}</p>}
+                  </>
                 )}
                 <div>
                   <Label htmlFor="notes" className="font-body text-sm text-muted-foreground">Observações</Label>
@@ -233,9 +243,15 @@ const CartPage = () => {
                   <span>€{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-body text-sm text-muted-foreground">
-                  <span>Taxa de Serviço (€0.90)</span>
+                  <span>Taxa de Serviço</span>
                   <span>€{serviceFee.toFixed(2)}</span>
                 </div>
+                {deliveryMode === "delivery" && deliveryFee > 0 && (
+                  <div className="flex justify-between font-body text-sm text-muted-foreground">
+                    <span>🚚 Taxa de Entrega</span>
+                    <span>€{deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-display text-lg font-bold text-foreground">
                   <span>Total</span>
                   <span className="text-primary">€{total.toFixed(2)}</span>
