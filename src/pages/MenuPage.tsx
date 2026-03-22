@@ -82,6 +82,11 @@ const MenuPage = () => {
     return addons.filter((a: any) => a.category_id === catId);
   };
 
+  const MEAT_KEYWORDS = ['carne', 'picanha', 'bife', 'hambúrguer', 'burger', 'frango', 'porco', 'costela', 'entrecôte', 'lombo', 'vitela', 'borrego', 'prego', 'secretos'];
+  const hasMeat = (item: any) => {
+    const t = `${item.name} ${item.description || ''} ${(item.ingredients || []).join(' ')}`.toLowerCase();
+    return MEAT_KEYWORDS.some(k => t.includes(k));
+  };
   const isExecutivo = (item: any) => item.day_of_week !== null && item.day_of_week !== undefined;
   const isAvailableToday = (item: any) => !isExecutivo(item) || item.day_of_week === today;
 
