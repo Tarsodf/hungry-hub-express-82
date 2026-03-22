@@ -116,7 +116,9 @@ const MenuPage = () => {
   const handleQuickAdd = (item: any) => {
     const itemAddons = getItemAddons(item);
     const hasIngredients = item.ingredients && item.ingredients.length > 0;
-    const needsMeatPoint = isExecutivo(item) || item.menu_categories?.name === "Hambúrgueres" || item.menu_categories?.name === "Pratos Executivos";
+    const meatKeywords = ['carne', 'picanha', 'bife', 'hambúrguer', 'burger', 'frango', 'porco', 'costela', 'entrecôte', 'lombo', 'vitela', 'borrego', 'prego', 'secretos'];
+    const itemText = `${item.name} ${item.description || ''} ${(item.ingredients || []).join(' ')}`.toLowerCase();
+    const needsMeatPoint = meatKeywords.some(kw => itemText.includes(kw));
     if (itemAddons.length > 0 || hasIngredients || needsMeatPoint) {
       openCustomize(item);
     } else {
