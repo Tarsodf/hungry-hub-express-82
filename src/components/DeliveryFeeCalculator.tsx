@@ -17,7 +17,7 @@ export const DELIVERY_ZONES: DeliveryZone[] = [
   { maxKm: 5, fee: 2.50, label: "3–5 km" },
   { maxKm: 8, fee: 3.50, label: "5–8 km" },
   { maxKm: 12, fee: 5.00, label: "8–12 km" },
-  { maxKm: Infinity, fee: 7.00, label: "12+ km" },
+  { maxKm: Infinity, fee: -1, label: "12+ km" },
 ];
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -32,7 +32,11 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 
 export function getDeliveryFee(distanceKm: number): number {
   const zone = DELIVERY_ZONES.find((z) => distanceKm <= z.maxKm);
-  return zone?.fee ?? DELIVERY_ZONES[DELIVERY_ZONES.length - 1].fee;
+  return zone?.fee ?? -1;
+}
+
+export function isConsultZone(distanceKm: number): boolean {
+  return getDeliveryFee(distanceKm) < 0;
 }
 
 export function getZoneLabel(distanceKm: number): string {
@@ -68,6 +72,11 @@ const DeliveryFeeCalculator = ({ onFeeCalculated, currentFee, currentDistance }:
           position.coords.longitude
         );
         const fee = getDeliveryFee(dist);
+        if (fee < 0) {
+          setError("Distância acima de 12 km. Por favor, consulte o estabelecimento para combinar a entrega.");
+          setLoading(false);
+          return;
+        }
         onFeeCalculated(fee, dist);
         setLoading(false);
       },
@@ -147,7 +156,7 @@ const DeliveryFeeCalculator = ({ onFeeCalculated, currentFee, currentDistance }:
           {DELIVERY_ZONES.map((z) => (
             <div key={z.label} className="flex justify-between font-body text-muted-foreground">
               <span>{z.label}</span>
-              <span className="font-semibold">€{z.fee.toFixed(2)}</span>
+              <span className="font-semibold">{z.fee < 0 ? "Consultar" : `€${z.fee.toFixed(2)}`}</span>
             </div>
           ))}
         </div>
