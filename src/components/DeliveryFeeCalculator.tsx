@@ -17,7 +17,7 @@ export const DELIVERY_ZONES: DeliveryZone[] = [
   { maxKm: 5, fee: 2.50, label: "3–5 km" },
   { maxKm: 8, fee: 3.50, label: "5–8 km" },
   { maxKm: 12, fee: 5.00, label: "8–12 km" },
-  { maxKm: Infinity, fee: 7.00, label: "12+ km" },
+  { maxKm: Infinity, fee: -1, label: "12+ km" },
 ];
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
