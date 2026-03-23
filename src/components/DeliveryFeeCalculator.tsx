@@ -67,12 +67,13 @@ const DeliveryFeeCalculator = ({ onFeeCalculated, currentFee, currentDistance }:
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const dist = haversineDistance(
+        const straightLine = haversineDistance(
           RESTAURANT_LAT,
           RESTAURANT_LNG,
           position.coords.latitude,
           position.coords.longitude
         );
+        const dist = straightLine * ROAD_FACTOR;
         const fee = getDeliveryFee(dist);
         if (fee < 0) {
           setError("Distância acima de 12 km. Por favor, consulte o estabelecimento para combinar a entrega.");
