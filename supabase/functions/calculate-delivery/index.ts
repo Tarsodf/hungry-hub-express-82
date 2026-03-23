@@ -250,7 +250,12 @@ async function geocode(address: string, postalCode: string): Promise<{ lat: numb
   const normalizedAddress = address.trim();
   const normalizedPostal = normalizePostalCode(postalCode);
   const streetFragment = extractStreetFragment(normalizedAddress);
-  const postalResults = normalizedPostal ? await nominatimSearch({ q: `${normalizedPostal}, Portugal` }, 5) : [];
+  const postalResults = normalizedPostal
+    ? [
+        ...(await nominatimSearch({ q: `${normalizedPostal}, Guimarães, Portugal` }, 5)),
+        ...(await nominatimSearch({ q: `${normalizedPostal}, Portugal` }, 5)),
+      ]
+    : [];
   const postalCentroid = postalResults.find(
     (result) => normalizePostalCode(result.address.postcode ?? extractPostalCode(result.label)) === normalizedPostal
   ) ?? postalResults[0] ?? null;
@@ -319,7 +324,7 @@ async function geocode(address: string, postalCode: string): Promise<{ lat: numb
     }
   }
 
-  if (normalizedAddress && bestMatch.streetOverlap < 0.5) {
+  if (!normalizedPostal && normalizedAddress && bestMatch.streetOverlap < 0.5) {
     throw new Error("A morada é ambígua. Adicione o código postal completo ou escreva a rua com mais detalhe.");
   }
 
