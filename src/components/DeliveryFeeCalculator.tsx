@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, Loader2, Check } from "lucide-react";
 
-// Restaurant coordinates: Alam São Damasco - S. Francisco, 4810-286 Guimarães
-const RESTAURANT_LAT = 41.4425;
-const RESTAURANT_LNG = -8.2918;
+// Restaurant coordinates: Alameda de São Dâmaso, 4810-286 Guimarães (exact)
+const RESTAURANT_LAT = 41.441352;
+const RESTAURANT_LNG = -8.293173;
+// Factor to approximate road distance from straight-line distance
+const ROAD_FACTOR = 1.35;
 
 export interface DeliveryZone {
   maxKm: number;
