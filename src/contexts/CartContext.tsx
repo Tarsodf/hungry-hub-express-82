@@ -34,6 +34,7 @@ interface CartContextType {
   deliveryFee: number;
   deliveryDistance: number | null;
   setDeliveryFee: (fee: number, distance: number) => void;
+  clearDeliveryFee: () => void;
   total: number;
   itemCount: number;
   deliveryMode: "delivery" | "pickup";
@@ -66,6 +67,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const setDeliveryFee = (fee: number, distance: number) => {
     setDeliveryFeeState(fee);
     setDeliveryDistance(distance);
+  };
+
+  const clearDeliveryFee = () => {
+    setDeliveryFeeState(0);
+    setDeliveryDistance(null);
   };
 
   const addItem = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
@@ -121,11 +127,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   return (
     <CartContext.Provider
       value={{
-        items, addItem, removeItem, updateQuantity, clearCart,
-        subtotal, serviceFee, deliveryFee: actualDeliveryFee, deliveryDistance, setDeliveryFee, total, itemCount,
-        deliveryMode, setDeliveryMode,
-        address, setAddress, orderNotes, setOrderNotes,
-        customerName, setCustomerName, customerPhone, setCustomerPhone,
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        subtotal,
+        serviceFee,
+        deliveryFee: actualDeliveryFee,
+        deliveryDistance,
+        setDeliveryFee,
+        clearDeliveryFee,
+        total,
+        itemCount,
+        deliveryMode,
+        setDeliveryMode,
+        address,
+        setAddress,
+        orderNotes,
+        setOrderNotes,
+        customerName,
+        setCustomerName,
+        customerPhone,
+        setCustomerPhone,
       }}
     >
       {children}
