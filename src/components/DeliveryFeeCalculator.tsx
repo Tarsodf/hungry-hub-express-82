@@ -156,7 +156,7 @@ const DeliveryFeeCalculator = ({ onFeeCalculated, currentFee, currentDistance }:
           {DELIVERY_ZONES.map((z) => (
             <div key={z.label} className="flex justify-between font-body text-muted-foreground">
               <span>{z.label}</span>
-              <span className="font-semibold">€{z.fee.toFixed(2)}</span>
+              <span className="font-semibold">{z.fee < 0 ? "Consultar" : `€${z.fee.toFixed(2)}`}</span>
             </div>
           ))}
         </div>
