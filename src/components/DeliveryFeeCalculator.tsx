@@ -72,6 +72,11 @@ const DeliveryFeeCalculator = ({ onFeeCalculated, currentFee, currentDistance }:
           position.coords.longitude
         );
         const fee = getDeliveryFee(dist);
+        if (fee < 0) {
+          setError("Distância acima de 12 km. Por favor, consulte o estabelecimento para combinar a entrega.");
+          setLoading(false);
+          return;
+        }
         onFeeCalculated(fee, dist);
         setLoading(false);
       },
