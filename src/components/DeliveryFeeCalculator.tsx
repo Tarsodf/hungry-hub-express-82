@@ -32,7 +32,11 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 
 export function getDeliveryFee(distanceKm: number): number {
   const zone = DELIVERY_ZONES.find((z) => distanceKm <= z.maxKm);
-  return zone?.fee ?? DELIVERY_ZONES[DELIVERY_ZONES.length - 1].fee;
+  return zone?.fee ?? -1;
+}
+
+export function isConsultZone(distanceKm: number): boolean {
+  return getDeliveryFee(distanceKm) < 0;
 }
 
 export function getZoneLabel(distanceKm: number): string {
