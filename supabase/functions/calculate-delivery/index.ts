@@ -43,74 +43,292 @@ const NOMINATIM_HEADERS = {
   "User-Agent": "DomBistroGrill/1.0 (delivery-calculator)",
 };
 
-async function nominatimSearch(params: Record<string, string>): Promise<{ lat: number; lng: number; label: string } | null> {
+type NominatimMatch = {
+  lat: number;
+  lng: number;
+  label: string;
+  address: Record<string, string | undefined>;
+};
+
+const STREET_STOP_WORDS = new Set([
+  "a",
+  "ao",
+  "da",
+  "das",
+  "de",
+  "do",
+  "dos",
+  "e",
+  "n",
+  "no",
+  "na",
+  "numero",
+  "número",
+  "rua",
+  "avenida",
+  "av",
+  "travessa",
+  "alameda",
+  "largo",
+  "praça",
+  "praca",
+]);
+
+function normalizeText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(r|r\.)\b/g, "rua")
+    .replace(/\b(av|av\.)\b/g, "avenida")
+    .replace(/\b(alam|alam\.)\b/g, "alameda")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizePostalCode(postalCode: string) {
+  const digits = postalCode.replace(/\D/g, "");
+  return digits.length === 7 ? digits.replace(/(\d{4})(\d{3})/, "$1-$2") : postalCode.trim();
+}
+
+function extractPostalCode(value: string) {
+  const match = value.match(/\b\d{4}-\d{3}\b/);
+  return match ? match[0] : "";
+}
+
+function extractStreetFragment(address: string) {
+  const firstSegment = address.split(",")[0]?.trim() ?? address.trim();
+  const withoutTrailingNumber = firstSegment.replace(/\b\d+[a-zA-Z/-]*\b.*$/, "").trim();
+  return withoutTrailingNumber || firstSegment;
+}
+
+function extractHouseNumber(address: string) {
+  const match = address.match(/\b(\d+[a-zA-Z/-]*)\b/);
+  return match?.[1] ?? "";
+}
+
+function tokenizeStreet(value: string) {
+  return normalizeText(value)
+    .split(" ")
+    .filter((token) => token.length > 1 && !STREET_STOP_WORDS.has(token));
+}
+
+function getCandidateCity(address: Record<string, string | undefined>) {
+  return address.city ?? address.town ?? address.village ?? address.municipality ?? address.county ?? "";
+}
+
+function getCandidateStreet(address: Record<string, string | undefined>, label: string) {
+  return [
+    address.road,
+    address.pedestrian,
+    address.footway,
+    address.neighbourhood,
+    address.suburb,
+    label,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getLinearDistanceKm(
+  pointA: { lat: number; lng: number },
+  pointB: { lat: number; lng: number }
+) {
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(pointB.lat - pointA.lat);
+  const dLng = toRadians(pointB.lng - pointA.lng);
+  const lat1 = toRadians(pointA.lat);
+  const lat2 = toRadians(pointB.lat);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function createViewbox(center: { lat: number; lng: number }) {
+  const deltaLat = 0.03;
+  const deltaLng = 0.04;
+  return `${center.lng - deltaLng},${center.lat + deltaLat},${center.lng + deltaLng},${center.lat - deltaLat}`;
+}
+
+function getStreetOverlap(address: string, candidate: NominatimMatch) {
+  const inputTokens = tokenizeStreet(extractStreetFragment(address));
+  if (!inputTokens.length) return 0;
+
+  const candidateTokens = new Set(tokenizeStreet(getCandidateStreet(candidate.address, candidate.label)));
+  if (!candidateTokens.size) return 0;
+
+  const matchingTokens = inputTokens.filter((token) => candidateTokens.has(token)).length;
+  return matchingTokens / inputTokens.length;
+}
+
+function scoreCandidate(
+  candidate: NominatimMatch,
+  address: string,
+  postalCode: string,
+  postalCenter?: { lat: number; lng: number } | null
+) {
+  const normalizedPostal = normalizePostalCode(postalCode);
+  const postalPrefix = normalizedPostal.slice(0, 4);
+  const candidatePostal = normalizePostalCode(candidate.address.postcode ?? extractPostalCode(candidate.label));
+  const streetOverlap = getStreetOverlap(address, candidate);
+  const normalizedCity = normalizeText(getCandidateCity(candidate.address));
+  const houseNumber = normalizeText(extractHouseNumber(address));
+  const candidateHouseNumber = normalizeText(candidate.address.house_number ?? "");
+
+  let score = 0;
+
+  if (normalizedPostal) {
+    if (candidatePostal === normalizedPostal) score += 220;
+    else if (postalPrefix && candidatePostal.startsWith(postalPrefix)) score += 90;
+    else score -= 140;
+  }
+
+  if (address.trim()) {
+    score += streetOverlap * 120;
+    if (streetOverlap === 0) score -= 40;
+  }
+
+  if (houseNumber && candidateHouseNumber === houseNumber) {
+    score += 20;
+  }
+
+  if (normalizedCity.includes("guimaraes")) {
+    score += 15;
+  }
+
+  const distanceFromPostalCenter = postalCenter
+    ? getLinearDistanceKm(postalCenter, { lat: candidate.lat, lng: candidate.lng })
+    : null;
+
+  if (distanceFromPostalCenter !== null) {
+    if (distanceFromPostalCenter <= 0.5) score += 40;
+    else if (distanceFromPostalCenter <= 1.5) score += 20;
+    else if (distanceFromPostalCenter > 5) score -= 50;
+  }
+
+  return {
+    score,
+    streetOverlap,
+    candidatePostal,
+    exactPostalMatch: Boolean(normalizedPostal && candidatePostal === normalizedPostal),
+    distanceFromPostalCenter,
+  };
+}
+
+async function nominatimSearch(params: Record<string, string>, limit = 5): Promise<NominatimMatch[]> {
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("limit", "1");
+  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("addressdetails", "1");
   url.searchParams.set("countrycodes", "pt");
   for (const [k, v] of Object.entries(params)) {
     if (v) url.searchParams.set(k, v);
   }
 
   const res = await fetch(url.toString(), { headers: NOMINATIM_HEADERS });
-  if (!res.ok) return null;
+  if (!res.ok) return [];
 
   const results = await res.json();
-  const match = Array.isArray(results) ? results[0] : null;
-  if (!match?.lat || !match?.lon) return null;
+  if (!Array.isArray(results)) return [];
 
-  return { lat: Number(match.lat), lng: Number(match.lon), label: match.display_name ?? "" };
+  return results
+    .filter((match) => match?.lat && match?.lon)
+    .map((match) => ({
+      lat: Number(match.lat),
+      lng: Number(match.lon),
+      label: match.display_name ?? "",
+      address: typeof match.address === "object" && match.address ? match.address : {},
+    }));
 }
 
 async function geocode(address: string, postalCode: string): Promise<{ lat: number; lng: number; label: string }> {
-  const normalizedPostal = postalCode.replace(/(\d{4})(\d{3})/, "$1-$2");
+  const normalizedAddress = address.trim();
+  const normalizedPostal = normalizePostalCode(postalCode);
+  const streetFragment = extractStreetFragment(normalizedAddress);
+  const postalResults = normalizedPostal
+    ? [
+        ...(await nominatimSearch({ q: `${normalizedPostal}, Guimarães, Portugal` }, 5)),
+        ...(await nominatimSearch({ q: `${normalizedPostal}, Portugal` }, 5)),
+      ]
+    : [];
+  const postalCentroid = postalResults.find(
+    (result) => normalizePostalCode(result.address.postcode ?? extractPostalCode(result.label)) === normalizedPostal
+  ) ?? postalResults[0] ?? null;
 
-  // Strategy 1: structured search with street + postal code + city
-  if (address && normalizedPostal) {
-    const result = await nominatimSearch({
-      street: address,
-      postalcode: normalizedPostal,
-      city: "Guimarães",
-      country: "Portugal",
-    });
-    if (result) return result;
+  const searchStrategies = [
+    postalCentroid && normalizedAddress
+      ? { q: `${normalizedAddress}, Portugal`, viewbox: createViewbox(postalCentroid), bounded: "1" }
+      : null,
+    postalCentroid && streetFragment && streetFragment !== normalizedAddress
+      ? { q: `${streetFragment}, Portugal`, viewbox: createViewbox(postalCentroid), bounded: "1" }
+      : null,
+    normalizedAddress && normalizedPostal ? { q: `${normalizedAddress}, ${normalizedPostal}, Portugal` } : null,
+    normalizedAddress && normalizedPostal
+      ? { street: normalizedAddress, postalcode: normalizedPostal, country: "Portugal" }
+      : null,
+    normalizedPostal ? { q: `${normalizedPostal}, Portugal` } : null,
+    normalizedAddress ? { q: `${normalizedAddress}, Portugal` } : null,
+    streetFragment && streetFragment !== normalizedAddress ? { q: `${streetFragment}, Portugal` } : null,
+    normalizedAddress ? { q: `${normalizedAddress}, Guimarães, Portugal` } : null,
+    streetFragment ? { q: `${streetFragment}, Guimarães, Portugal` } : null,
+  ].filter((strategy): strategy is Record<string, string> => Boolean(strategy));
+
+  const dedupedMatches = new Map<string, NominatimMatch>();
+  for (const result of postalResults) {
+    dedupedMatches.set(`${result.lat},${result.lng}`, result);
   }
-
-  // Strategy 2: structured search with just street + city
-  if (address) {
-    const result = await nominatimSearch({
-      street: address,
-      city: "Guimarães",
-      country: "Portugal",
-    });
-    if (result) return result;
-  }
-
-  // Strategy 3: free-text search with full query
-  {
-    const parts = [address, normalizedPostal, "Guimarães, Portugal"].filter(Boolean);
-    const result = await nominatimSearch({ q: parts.join(", ") });
-    if (result) return result;
-  }
-
-  // Strategy 4: free-text with just postal code + city
-  if (normalizedPostal) {
-    const result = await nominatimSearch({ q: `${normalizedPostal}, Guimarães, Portugal` });
-    if (result) return result;
-  }
-
-  // Strategy 5: free-text with just address + city (no number)
-  if (address) {
-    const streetOnly = address.replace(/\d+.*$/, "").trim();
-    if (streetOnly && streetOnly !== address) {
-      const result = await nominatimSearch({ q: `${streetOnly}, Guimarães, Portugal` });
-      if (result) return result;
+  for (const strategy of searchStrategies) {
+    const results = await nominatimSearch(strategy, 5);
+    for (const result of results) {
+      dedupedMatches.set(`${result.lat},${result.lng}`, result);
     }
   }
 
-  throw new Error(
-    "Não foi possível localizar a morada. Verifique o endereço e/ou código postal e tente novamente."
+  const scoredMatches = Array.from(dedupedMatches.values())
+    .map((candidate) => ({ candidate, ...scoreCandidate(candidate, normalizedAddress, normalizedPostal, postalCentroid) }))
+    .sort((a, b) => b.score - a.score);
+
+  const bestMatch = scoredMatches[0];
+  const bestPostalStreetMatch = scoredMatches.find(
+    (match) => match.exactPostalMatch && match.streetOverlap >= 0.35
   );
+  const bestNearbyStreetMatch = scoredMatches.find(
+    (match) =>
+      match.streetOverlap >= 0.6 &&
+      (match.distanceFromPostalCenter === null || match.distanceFromPostalCenter <= 3)
+  );
+
+  if (!bestMatch) {
+    throw new Error("Não foi possível localizar a morada. Verifique o endereço e/ou código postal e tente novamente.");
+  }
+
+  if (normalizedPostal && postalCentroid) {
+    if (bestPostalStreetMatch) return bestPostalStreetMatch.candidate;
+    if (bestNearbyStreetMatch) return bestNearbyStreetMatch.candidate;
+    return postalCentroid;
+  }
+
+  if (normalizedPostal && !bestMatch.exactPostalMatch) {
+    const relaxedPostalMatch =
+      Boolean(normalizedPostal.slice(0, 4)) &&
+      bestMatch.candidatePostal.startsWith(normalizedPostal.slice(0, 4)) &&
+      bestMatch.streetOverlap >= 0.6;
+
+    if (!relaxedPostalMatch) {
+      throw new Error("O código postal não corresponde à morada encontrada. Confirme os dados ou use um código postal mais exato.");
+    }
+  }
+
+  if (!normalizedPostal && normalizedAddress && bestMatch.streetOverlap < 0.5) {
+    throw new Error("A morada é ambígua. Adicione o código postal completo ou escreva a rua com mais detalhe.");
+  }
+
+  return bestMatch.candidate;
 }
 
 async function getRouteDistanceKm(
