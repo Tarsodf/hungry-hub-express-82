@@ -498,11 +498,21 @@ const MenuManagement = () => {
               {group.items.map((item: any) => (
                 <div key={item.id} className="glass rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-xl flex-shrink-0">🍴</div>
-                    )}
+                    <label className="relative group cursor-pointer inline-block flex-shrink-0">
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover" />
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-xl">🍴</div>
+                      )}
+                      <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        {uploadingImageFor === item.id ? (
+                          <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Camera className="h-5 w-5 text-white" />
+                        )}
+                      </div>
+                    </label>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="font-body text-sm font-semibold text-foreground truncate">{item.name}</h3>
