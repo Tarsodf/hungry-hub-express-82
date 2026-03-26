@@ -4,7 +4,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const RESTAURANT_ADDRESS = "Alam São Damasco - S. Francisco, Centro 35, 4810-286 Guimarães, Portugal";
+// Coordenadas do restaurante [longitude, latitude]
+const RESTAURANTE = [-8.289, 41.443];
 
 const DELIVERY_ZONES = [
   { maxKm: 3, fee: 2 },
@@ -43,46 +44,64 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Informe uma morada ou código postal." }, 400);
     }
 
-    // Build destination string combining address and postal code
-    const destinationParts: string[] = [];
-    if (address) destinationParts.push(address);
-    if (postalCode) destinationParts.push(postalCode);
-    destinationParts.push("Portugal");
-    const destination = destinationParts.join(", ");
-
-    const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+    const apiKey = Deno.env.get("OPENROUTESERVICE_API_KEY");
     if (!apiKey) {
-      console.error("GOOGLE_MAPS_API_KEY not configured");
+      console.error("OPENROUTESERVICE_API_KEY not configured");
       return jsonResponse({ error: "Serviço de entrega indisponível." }, 500);
     }
 
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(RESTAURANT_ADDRESS)}&destinations=${encodeURIComponent(destination)}&mode=driving&language=pt-PT&key=${apiKey}`;
+    // Build search text
+    const searchParts: string[] = [];
+    if (address) searchParts.push(address);
+    if (postalCode) searchParts.push(postalCode);
+    searchParts.push("Portugal");
+    const searchText = searchParts.join(", ");
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      const text = await response.text();
-      console.error("Google API error:", response.status, text);
-      return jsonResponse({ error: "Erro ao calcular a distância." }, 500);
+    // Step 1: Geocode the client address
+    const geoUrl = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(searchText)}&boundary.country=PT&size=1`;
+    const geoResponse = await fetch(geoUrl);
+
+    if (!geoResponse.ok) {
+      const text = await geoResponse.text();
+      console.error("Geocoding error:", geoResponse.status, text);
+      return jsonResponse({ error: "Erro ao encontrar a morada." }, 500);
     }
 
-    const data = await response.json();
+    const geoData = await geoResponse.json();
+    const features = geoData?.features;
 
-    if (data.status !== "OK") {
-      console.error("Google API status:", data.status, data.error_message);
-      return jsonResponse({ error: "Erro ao calcular a distância." }, 500);
-    }
-
-    const element = data.rows?.[0]?.elements?.[0];
-    if (!element || element.status !== "OK") {
-      const elementStatus = element?.status ?? "UNKNOWN";
-      console.error("Element status:", elementStatus);
+    if (!features || features.length === 0) {
       return jsonResponse({
         error: "Não foi possível encontrar a morada. Verifique o endereço e tente novamente.",
       }, 400);
     }
 
-    const distanceMeters = element.distance?.value;
+    const destino = features[0].geometry.coordinates; // [lon, lat]
+    const matchedAddress = features[0].properties?.label ?? searchText;
+
+    // Step 2: Calculate driving route
+    const routeResponse = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
+      method: "POST",
+      headers: {
+        "Authorization": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        coordinates: [RESTAURANTE, destino],
+      }),
+    });
+
+    if (!routeResponse.ok) {
+      const text = await routeResponse.text();
+      console.error("Route error:", routeResponse.status, text);
+      return jsonResponse({ error: "Erro ao calcular a distância." }, 500);
+    }
+
+    const routeData = await routeResponse.json();
+    const distanceMeters = routeData?.routes?.[0]?.summary?.distance;
+
     if (typeof distanceMeters !== "number") {
+      console.error("No distance in route response:", JSON.stringify(routeData));
       return jsonResponse({ error: "Não foi possível calcular a distância." }, 500);
     }
 
@@ -91,7 +110,7 @@ Deno.serve(async (req) => {
 
     return jsonResponse({
       ...quote,
-      matchedAddress: data.destination_addresses?.[0] ?? destination,
+      matchedAddress,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro inesperado.";
