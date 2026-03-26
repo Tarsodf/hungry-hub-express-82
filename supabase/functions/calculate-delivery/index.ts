@@ -57,9 +57,11 @@ Deno.serve(async (req) => {
     searchParts.push("Portugal");
     const searchText = searchParts.join(", ");
 
-    // Step 1: Geocode the client address
-    const geoUrl = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(searchText)}&boundary.country=PT&size=1`;
-    const geoResponse = await fetch(geoUrl);
+    // Step 1: Geocode the client address (Authorization header)
+    const geoUrl = `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(searchText)}&boundary.country=PT&size=1`;
+    const geoResponse = await fetch(geoUrl, {
+      headers: { "Authorization": apiKey },
+    });
 
     if (!geoResponse.ok) {
       const text = await geoResponse.text();
@@ -79,8 +81,8 @@ Deno.serve(async (req) => {
     const destino = features[0].geometry.coordinates; // [lon, lat]
     const matchedAddress = features[0].properties?.label ?? searchText;
 
-    // Step 2: Calculate driving route
-    const routeResponse = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
+    // Step 2: Calculate driving route (geojson endpoint)
+    const routeResponse = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
       method: "POST",
       headers: {
         "Authorization": apiKey,
@@ -98,7 +100,7 @@ Deno.serve(async (req) => {
     }
 
     const routeData = await routeResponse.json();
-    const distanceMeters = routeData?.routes?.[0]?.summary?.distance;
+    const distanceMeters = routeData?.features?.[0]?.properties?.summary?.distance;
 
     if (typeof distanceMeters !== "number") {
       console.error("No distance in route response:", JSON.stringify(routeData));
