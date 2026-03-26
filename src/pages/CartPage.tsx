@@ -2,16 +2,20 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
-import { Trash2, Plus, Minus, ShoppingCart, Send } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Send, CreditCard, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import DeliveryFeeCalculator from "@/components/DeliveryFeeCalculator";
+import PaymentMethodSelector, { type PaymentMethod } from "@/components/PaymentMethodSelector";
 
 const WHATSAPP_NUMBER = "351930580520";
 const POSTAL_CODE_REGEX = /^\d{4}-?\d{3}$/;
+
+const MBWAY_PHONE = "+351 930 580 520";
+const IBAN = "PT50 0000 0000 0000 0000 0000 0"; // TODO: replace with real IBAN
 
 const CartPage = () => {
   const {
@@ -42,6 +46,7 @@ const CartPage = () => {
   const [postalCode, setPostalCode] = useState("");
   const [deliveryNeedsConsultation, setDeliveryNeedsConsultation] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
 
   const getFormattedPostalCode = () => {
     const trimmed = postalCode.trim();
@@ -59,6 +64,15 @@ const CartPage = () => {
     setDeliveryNeedsConsultation(false);
   };
 
+  const getPaymentMethodLabel = () => {
+    switch (paymentMethod) {
+      case "card": return "💳 Cartão (Crédito/Débito)";
+      case "mbway": return "📱 MB WAY";
+      case "transfer": return "🏦 Transferência Bancária";
+      case "cash": return "💵 Dinheiro na entrega";
+    }
+  };
+
   const buildWhatsAppMessage = () => {
     const formattedDeliveryAddress = getFormattedDeliveryAddress();
     let msg = `🍽️ *Novo Pedido - Dom Bistro Grill*\n\n`;
@@ -68,6 +82,7 @@ const CartPage = () => {
     if (deliveryMode === "delivery" && formattedDeliveryAddress) {
       msg += `📍 *Endereço:* ${formattedDeliveryAddress}\n`;
     }
+    msg += `💳 *Pagamento:* ${getPaymentMethodLabel()}\n`;
     msg += `\n━━━━━━━━━━━━━━━\n`;
     msg += `📋 *Itens do Pedido:*\n\n`;
 
@@ -97,6 +112,19 @@ const CartPage = () => {
       }
     }
     msg += `🏷️ *Total: €${total.toFixed(2)}*\n`;
+
+    if (paymentMethod === "mbway") {
+      msg += `\n📱 *Pagamento MB WAY pendente*\n`;
+      msg += `Número para envio: ${MBWAY_PHONE}\n`;
+    } else if (paymentMethod === "transfer") {
+      msg += `\n🏦 *Pagamento por Transferência pendente*\n`;
+      msg += `IBAN: ${IBAN}\n`;
+    } else if (paymentMethod === "cash") {
+      msg += `\n💵 *Pagamento em dinheiro na ${deliveryMode === "delivery" ? "entrega" : "retirada"}*\n`;
+    } else if (paymentMethod === "card") {
+      msg += `\n💳 *Pagamento online realizado via Stripe*\n`;
+    }
+
     if (orderNotes) {
       msg += `\n📝 *Observações:* ${orderNotes}\n`;
     }
@@ -133,49 +161,88 @@ const CartPage = () => {
     return Object.keys(errs).length === 0;
   };
 
+  const createOrder = async () => {
+    const payload = {
+      customer_name: customerName.trim(),
+      customer_phone: customerPhone.trim(),
+      delivery_mode: deliveryMode,
+      address: deliveryMode === "delivery" ? getFormattedDeliveryAddress() : "",
+      notes: orderNotes.trim(),
+      items: items.map((item) => ({
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        customization: {
+          removed: item.customization?.removed || [],
+          addons: item.customization?.addons || [],
+          meatPoint: item.customization?.meatPoint || undefined,
+        },
+      })),
+    };
+
+    const { data, error } = await supabase.functions.invoke("create-order", { body: payload });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
+
+  const sendWhatsApp = () => {
+    const message = buildWhatsAppMessage();
+    const encodedMsg = encodeURIComponent(message);
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMsg}`;
+    const opened = window.open(waUrl, "_blank");
+    if (!opened) {
+      const webUrl = `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMsg}`;
+      const opened2 = window.open(webUrl, "_blank");
+      if (!opened2) window.location.href = waUrl;
+    }
+  };
+
   const handleSubmitOrder = async () => {
     if (!validate()) return;
-
     setSending(true);
+
     try {
-      const payload = {
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
-        delivery_mode: deliveryMode,
-        address: deliveryMode === "delivery" ? getFormattedDeliveryAddress() : "",
-        notes: orderNotes.trim(),
-        items: items.map((item) => ({
-          menu_item_id: item.id,
-          quantity: item.quantity,
-          customization: {
-            removed: item.customization?.removed || [],
-            addons: item.customization?.addons || [],
-            meatPoint: item.customization?.meatPoint || undefined,
-          },
-        })),
-      };
+      const orderData = await createOrder();
 
-      const { data, error } = await supabase.functions.invoke("create-order", { body: payload });
+      if (paymentMethod === "card") {
+        // Stripe checkout
+        const checkoutPayload = {
+          order_id: orderData.order_id,
+          customer_name: customerName.trim(),
+          customer_phone: customerPhone.trim(),
+          delivery_mode: deliveryMode,
+          service_fee: serviceFee,
+          delivery_fee: deliveryFee,
+          items: items.map((item) => ({
+            menu_item_id: item.id,
+            name: item.name,
+            unit_price: item.price,
+            quantity: item.quantity,
+            customization: {
+              removed: item.customization?.removed || [],
+              addons: item.customization?.addons || [],
+              meatPoint: item.customization?.meatPoint || undefined,
+            },
+          })),
+        };
 
-      if (error) throw error;
-      if (data?.error) {
-        toast.error(data.error);
-        setSending(false);
-        return;
-      }
+        const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke(
+          "create-checkout",
+          { body: checkoutPayload }
+        );
 
-      const message = buildWhatsAppMessage();
-      const encodedMsg = encodeURIComponent(message);
-      const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMsg}`;
-      const opened = window.open(waUrl, "_blank");
-      if (!opened) {
-        const webUrl = `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMsg}`;
-        const opened2 = window.open(webUrl, "_blank");
-        if (!opened2) {
-          window.location.href = waUrl;
+        if (checkoutError) throw checkoutError;
+        if (checkoutData?.error) throw new Error(checkoutData.error);
+
+        if (checkoutData?.url) {
+          clearCart();
+          window.location.href = checkoutData.url;
+          return;
         }
       }
 
+      // For manual methods (mbway, transfer, cash) — send via WhatsApp
+      sendWhatsApp();
       toast.success("Pedido enviado com sucesso!");
       clearCart();
     } catch (err: any) {
@@ -185,6 +252,21 @@ const CartPage = () => {
       setSending(false);
     }
   };
+
+  const getSubmitButtonConfig = () => {
+    switch (paymentMethod) {
+      case "card":
+        return { icon: CreditCard, text: "Pagar com Cartão", color: "bg-[#635BFF] hover:bg-[#635BFF]/90" };
+      case "mbway":
+        return { icon: Send, text: "Confirmar e Enviar (MB WAY)", color: "bg-[#E4002B] hover:bg-[#E4002B]/90" };
+      case "transfer":
+        return { icon: Send, text: "Confirmar e Enviar (Transferência)", color: "bg-[#0070BA] hover:bg-[#0070BA]/90" };
+      case "cash":
+        return { icon: Send, text: "Confirmar Pedido (Dinheiro)", color: "bg-[#25D366] hover:bg-[#25D366]/90" };
+    }
+  };
+
+  const btnConfig = getSubmitButtonConfig();
 
   if (items.length === 0) {
     return (
@@ -264,19 +346,13 @@ const CartPage = () => {
                   <Label className="font-body text-sm text-muted-foreground">Modo de recebimento</Label>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => {
-                        setDeliveryMode("delivery");
-                        resetDeliveryCalculation();
-                      }}
+                      onClick={() => { setDeliveryMode("delivery"); resetDeliveryCalculation(); }}
                       className={`rounded-lg p-3 text-center font-body text-sm transition-all ${deliveryMode === "delivery" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
                     >
                       🚚 Entrega
                     </button>
                     <button
-                      onClick={() => {
-                        setDeliveryMode("pickup");
-                        resetDeliveryCalculation();
-                      }}
+                      onClick={() => { setDeliveryMode("pickup"); resetDeliveryCalculation(); }}
                       className={`rounded-lg p-3 text-center font-body text-sm transition-all ${deliveryMode === "pickup" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
                     >
                       🏪 Retirada
@@ -290,10 +366,7 @@ const CartPage = () => {
                       <Input
                         id="address"
                         value={address}
-                        onChange={(e) => {
-                          setAddress(e.target.value.slice(0, 200));
-                          resetDeliveryCalculation();
-                        }}
+                        onChange={(e) => { setAddress(e.target.value.slice(0, 200)); resetDeliveryCalculation(); }}
                         placeholder="Rua, número, andar..."
                         className="mt-1 bg-secondary border-border text-foreground"
                         maxLength={200}
@@ -305,10 +378,7 @@ const CartPage = () => {
                       <Input
                         id="postalCode"
                         value={postalCode}
-                        onChange={(e) => {
-                          setPostalCode(e.target.value.replace(/[^\d-]/g, "").slice(0, 8));
-                          resetDeliveryCalculation();
-                        }}
+                        onChange={(e) => { setPostalCode(e.target.value.replace(/[^\d-]/g, "").slice(0, 8)); resetDeliveryCalculation(); }}
                         placeholder="4810-647"
                         className="mt-1 bg-secondary border-border text-foreground"
                         maxLength={8}
@@ -319,14 +389,8 @@ const CartPage = () => {
                     <DeliveryFeeCalculator
                       address={address}
                       postalCode={postalCode}
-                      onFeeCalculated={(fee, distance) => {
-                        setDeliveryFee(fee, distance);
-                        setDeliveryNeedsConsultation(false);
-                      }}
-                      onConsultRequired={() => {
-                        clearDeliveryFee();
-                        setDeliveryNeedsConsultation(true);
-                      }}
+                      onFeeCalculated={(fee, distance) => { setDeliveryFee(fee, distance); setDeliveryNeedsConsultation(false); }}
+                      onConsultRequired={() => { clearDeliveryFee(); setDeliveryNeedsConsultation(true); }}
                       currentFee={deliveryFee > 0 ? deliveryFee : null}
                       currentDistance={deliveryDistance}
                     />
@@ -338,6 +402,35 @@ const CartPage = () => {
                   <Textarea id="notes" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value.slice(0, 500))} placeholder="Alguma observação?" className="mt-1 bg-secondary border-border text-foreground" rows={2} maxLength={500} />
                   {errors.orderNotes && <p className="mt-1 text-xs text-destructive">{errors.orderNotes}</p>}
                 </div>
+
+                {/* Payment Method Selection */}
+                <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
+
+                {/* Payment instructions for manual methods */}
+                {paymentMethod === "mbway" && (
+                  <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                    <p className="font-body text-xs text-muted-foreground">
+                      📱 Após confirmar, envie o pagamento de <strong className="text-foreground">€{total.toFixed(2)}</strong> via MB WAY para o número:
+                    </p>
+                    <p className="mt-1 font-body text-sm font-bold text-foreground">{MBWAY_PHONE}</p>
+                  </div>
+                )}
+                {paymentMethod === "transfer" && (
+                  <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                    <p className="font-body text-xs text-muted-foreground">
+                      🏦 Após confirmar, transfira <strong className="text-foreground">€{total.toFixed(2)}</strong> para:
+                    </p>
+                    <p className="mt-1 font-body text-xs font-bold text-foreground break-all">{IBAN}</p>
+                    <p className="mt-1 font-body text-[10px] text-muted-foreground">Envie o comprovativo pelo WhatsApp.</p>
+                  </div>
+                )}
+                {paymentMethod === "cash" && (
+                  <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                    <p className="font-body text-xs text-muted-foreground">
+                      💵 Pague <strong className="text-foreground">€{total.toFixed(2)}</strong> em dinheiro no momento da {deliveryMode === "delivery" ? "entrega" : "retirada"}.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 border-t border-border pt-4 space-y-2">
@@ -371,12 +464,16 @@ const CartPage = () => {
               </div>
 
               <Button
-                className="mt-6 w-full bg-[#25D366] text-white font-body font-bold py-6 hover:bg-[#25D366]/90"
+                className={`mt-6 w-full text-white font-body font-bold py-6 ${btnConfig.color}`}
                 onClick={handleSubmitOrder}
                 disabled={sending}
               >
-                <Send className="mr-2 h-5 w-5" />
-                {sending ? "Enviando..." : "Enviar pelo WhatsApp"}
+                {sending ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <btnConfig.icon className="mr-2 h-5 w-5" />
+                )}
+                {sending ? "Processando..." : btnConfig.text}
               </Button>
             </div>
           </div>
