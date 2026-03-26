@@ -4,15 +4,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Coordenadas do restaurante [longitude, latitude]
-const RESTAURANTE = [-8.289, 41.443];
-
-const DELIVERY_ZONES = [
-  { maxKm: 3, fee: 2 },
-  { maxKm: 5, fee: 3 },
-  { maxKm: 8, fee: 4 },
-  { maxKm: Infinity, fee: null },
-] as const;
+const RESTAURANTE = "Alam São Damasco - S. Francisco, Centro 35, 4810-286 Guimarães, Portugal";
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -22,12 +14,10 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 }
 
 function getDeliveryQuote(distanceKm: number) {
-  const zone = DELIVERY_ZONES.find((z) => distanceKm <= z.maxKm) ?? DELIVERY_ZONES[DELIVERY_ZONES.length - 1];
-  return {
-    distanceKm: Math.round(distanceKm * 10) / 10,
-    fee: zone.fee,
-    consultRequired: zone.fee === null,
-  };
+  if (distanceKm <= 3) return { distanceKm: Math.round(distanceKm * 10) / 10, fee: 2, consultRequired: false };
+  if (distanceKm <= 5) return { distanceKm: Math.round(distanceKm * 10) / 10, fee: 3, consultRequired: false };
+  if (distanceKm <= 8) return { distanceKm: Math.round(distanceKm * 10) / 10, fee: 4, consultRequired: false };
+  return { distanceKm: Math.round(distanceKm * 10) / 10, fee: null, consultRequired: true };
 }
 
 Deno.serve(async (req) => {
@@ -44,70 +34,49 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Informe uma morada ou código postal." }, 400);
     }
 
-    const apiKey = Deno.env.get("OPENROUTESERVICE_API_KEY");
+    const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
     if (!apiKey) {
-      console.error("OPENROUTESERVICE_API_KEY not configured");
+      console.error("GOOGLE_MAPS_API_KEY not configured");
       return jsonResponse({ error: "Serviço de entrega indisponível." }, 500);
     }
 
-    // Build search text
-    const searchParts: string[] = [];
-    if (address) searchParts.push(address);
-    if (postalCode) searchParts.push(postalCode);
-    searchParts.push("Portugal");
-    const searchText = searchParts.join(", ");
+    // Build destination text
+    const destParts: string[] = [];
+    if (address) destParts.push(address);
+    if (postalCode) destParts.push(postalCode);
+    destParts.push("Portugal");
+    const destination = destParts.join(", ");
 
-    // Step 1: Geocode the client address (Authorization header)
-    const geoUrl = `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(searchText)}&boundary.country=PT&size=1`;
-    const geoResponse = await fetch(geoUrl, {
-      headers: { "Authorization": apiKey },
-    });
+    // Google Distance Matrix API - driving mode
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(RESTAURANTE)}&destinations=${encodeURIComponent(destination)}&mode=driving&language=pt&key=${apiKey}`;
 
-    if (!geoResponse.ok) {
-      const text = await geoResponse.text();
-      console.error("Geocoding error:", geoResponse.status, text);
-      return jsonResponse({ error: "Erro ao encontrar a morada." }, 500);
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("Google Distance Matrix error:", response.status, text);
+      return jsonResponse({ error: "Erro ao calcular a distância." }, 500);
     }
 
-    const geoData = await geoResponse.json();
-    const features = geoData?.features;
+    const data = await response.json();
+    console.log("Distance Matrix response:", JSON.stringify(data));
 
-    if (!features || features.length === 0) {
+    if (data.status !== "OK") {
+      console.error("Distance Matrix status:", data.status, data.error_message);
+      return jsonResponse({ error: "Erro ao calcular a distância." }, 500);
+    }
+
+    const element = data.rows?.[0]?.elements?.[0];
+    if (!element || element.status !== "OK") {
+      const elementStatus = element?.status ?? "UNKNOWN";
+      console.error("Element status:", elementStatus);
       return jsonResponse({
         error: "Não foi possível encontrar a morada. Verifique o endereço e tente novamente.",
       }, 400);
     }
 
-    const destino = features[0].geometry.coordinates; // [lon, lat]
-    const matchedAddress = features[0].properties?.label ?? searchText;
-
-    // Step 2: Calculate driving route (geojson endpoint)
-    const routeResponse = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
-      method: "POST",
-      headers: {
-        "Authorization": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        coordinates: [RESTAURANTE, destino],
-      }),
-    });
-
-    if (!routeResponse.ok) {
-      const text = await routeResponse.text();
-      console.error("Route error:", routeResponse.status, text);
-      return jsonResponse({ error: "Erro ao calcular a distância." }, 500);
-    }
-
-    const routeData = await routeResponse.json();
-    const distanceMeters = routeData?.features?.[0]?.properties?.summary?.distance;
-
-    if (typeof distanceMeters !== "number") {
-      console.error("No distance in route response:", JSON.stringify(routeData));
-      return jsonResponse({ error: "Não foi possível calcular a distância." }, 500);
-    }
-
+    const distanceMeters = element.distance.value;
     const distanceKm = distanceMeters / 1000;
+    const matchedAddress = data.destination_addresses?.[0] ?? destination;
     const quote = getDeliveryQuote(distanceKm);
 
     return jsonResponse({
