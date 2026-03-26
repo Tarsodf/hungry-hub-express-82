@@ -134,7 +134,7 @@ const DeliveryFeeCalculator = ({
             📍 Distância por estrada: {consultDistance.toFixed(1)} km
           </p>
           <p className="font-body text-xs text-muted-foreground">
-            Para entregas acima de 12 km, confirme a disponibilidade diretamente com o restaurante.
+            Para entregas acima de 8 km, a entrega não está disponível. Contacte o restaurante para mais informações.
           </p>
           <Button
             variant="ghost"
