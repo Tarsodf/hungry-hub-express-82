@@ -130,30 +130,18 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Allergy Notice */}
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="glass rounded-2xl p-6 md:p-8 max-w-3xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <AlertTriangle className="h-5 w-5 text-primary" />
-              <h3 className="font-display text-lg font-semibold text-foreground">Informação para Alérgicos</h3>
-            </div>
-            <p className="font-body text-sm text-muted-foreground leading-relaxed">
-              Os nossos pratos podem conter ou ter contacto cruzado com <span className="text-foreground font-medium">glúten, lactose, frutos de casca rija, ovos, soja, marisco</span> e outros alergénios durante o preparo.
-            </p>
-            <p className="font-body text-sm text-muted-foreground leading-relaxed mt-3">
-              Se tem alguma alergia ou intolerância alimentar, por favor entre em contacto connosco antes de fazer o seu pedido.
-            </p>
-            <a href="tel:+351935044022" className="inline-flex items-center gap-2 mt-5 text-primary font-body text-sm font-semibold hover:underline">
-              <Phone className="h-4 w-4" />
-              Ligar para o restaurante
-            </a>
-          </div>
-        </div>
-      </section>
-
       {/* Google Reviews */}
       <GoogleReviews />
+
+      {/* Allergy Notice */}
+      <div className="border-t border-border bg-secondary/30 py-4">
+        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
+          <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <p className="font-body text-xs text-muted-foreground">
+            Os nossos pratos podem conter alergénios ou ter contacto cruzado. Se tem alguma alergia, <a href="tel:+351935044022" className="text-primary hover:underline font-medium">contacte-nos</a> antes de encomendar.
+          </p>
+        </div>
+      </div>
 
     </main>
   );
