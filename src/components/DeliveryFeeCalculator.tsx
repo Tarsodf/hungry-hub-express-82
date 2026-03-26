@@ -10,11 +10,10 @@ export interface DeliveryZone {
 }
 
 export const DELIVERY_ZONES: DeliveryZone[] = [
-  { maxKm: 3, fee: 1.5, label: "Até 3 km" },
-  { maxKm: 5, fee: 2.5, label: "3–5 km" },
-  { maxKm: 8, fee: 3.5, label: "5–8 km" },
-  { maxKm: 12, fee: 5, label: "8–12 km" },
-  { maxKm: Infinity, fee: null, label: "12+ km" },
+  { maxKm: 3, fee: 2, label: "Até 3 km" },
+  { maxKm: 5, fee: 3, label: "3–5 km" },
+  { maxKm: 8, fee: 4, label: "5–8 km" },
+  { maxKm: Infinity, fee: null, label: "8+ km" },
 ];
 
 interface Props {
@@ -135,7 +134,7 @@ const DeliveryFeeCalculator = ({
             📍 Distância por estrada: {consultDistance.toFixed(1)} km
           </p>
           <p className="font-body text-xs text-muted-foreground">
-            Para entregas acima de 12 km, confirme a disponibilidade diretamente com o restaurante.
+            Para entregas acima de 8 km, a entrega não está disponível. Contacte o restaurante para mais informações.
           </p>
           <Button
             variant="ghost"
