@@ -339,6 +339,28 @@ const MenuManagement = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
+
+  const handleQuickImageChange = async (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImageFor(itemId);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("menu-images").upload(path, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("menu-images").getPublicUrl(path);
+      const { error: updateError } = await supabase.from("menu_items").update({ image_url: urlData.publicUrl }).eq("id", itemId);
+      if (updateError) throw updateError;
+      queryClient.invalidateQueries({ queryKey: ["admin-menu-items"] });
+      toast.success("Foto atualizada!");
+    } catch {
+      toast.error("Erro ao atualizar foto");
+    } finally {
+      setUploadingImageFor(null);
+    }
+  };
 
   const { data: categories = [] } = useQuery({
     queryKey: ["admin-categories"],
