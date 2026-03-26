@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, LogOut, Package, LayoutDashboard, History, UtensilsCrossed, TrendingUp, ShoppingCart, DollarSign, BarChart3, AlertTriangle, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Package, LayoutDashboard, History, UtensilsCrossed, TrendingUp, ShoppingCart, DollarSign, BarChart3, AlertTriangle, Calendar, Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
