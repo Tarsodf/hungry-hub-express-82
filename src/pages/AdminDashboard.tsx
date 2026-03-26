@@ -453,11 +453,21 @@ const MenuManagement = () => {
                   {group.items.map((item: any) => (
                     <tr key={item.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                       <td className="py-2 px-4">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-lg">🍴</div>
-                        )}
+                        <label className="relative group cursor-pointer inline-block">
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                          {item.image_url ? (
+                            <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-lg">🍴</div>
+                          )}
+                          <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {uploadingImageFor === item.id ? (
+                              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Camera className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        </label>
                       </td>
                       <td className="py-2 px-4 text-foreground font-medium">{item.name}</td>
                       <td className="py-2 px-4 text-right text-primary font-semibold">€{Number(item.price).toFixed(2)}</td>
