@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, LogOut, Package, LayoutDashboard, History, UtensilsCrossed, TrendingUp, ShoppingCart, DollarSign, BarChart3, AlertTriangle, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Package, LayoutDashboard, History, UtensilsCrossed, TrendingUp, ShoppingCart, DollarSign, BarChart3, AlertTriangle, Calendar, Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -339,6 +339,28 @@ const MenuManagement = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
+
+  const handleQuickImageChange = async (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImageFor(itemId);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("menu-images").upload(path, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("menu-images").getPublicUrl(path);
+      const { error: updateError } = await supabase.from("menu_items").update({ image_url: urlData.publicUrl }).eq("id", itemId);
+      if (updateError) throw updateError;
+      queryClient.invalidateQueries({ queryKey: ["admin-menu-items"] });
+      toast.success("Foto atualizada!");
+    } catch {
+      toast.error("Erro ao atualizar foto");
+    } finally {
+      setUploadingImageFor(null);
+    }
+  };
 
   const { data: categories = [] } = useQuery({
     queryKey: ["admin-categories"],
@@ -431,11 +453,21 @@ const MenuManagement = () => {
                   {group.items.map((item: any) => (
                     <tr key={item.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                       <td className="py-2 px-4">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-lg">🍴</div>
-                        )}
+                        <label className="relative group cursor-pointer inline-block">
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                          {item.image_url ? (
+                            <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-lg">🍴</div>
+                          )}
+                          <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {uploadingImageFor === item.id ? (
+                              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Camera className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        </label>
                       </td>
                       <td className="py-2 px-4 text-foreground font-medium">{item.name}</td>
                       <td className="py-2 px-4 text-right text-primary font-semibold">€{Number(item.price).toFixed(2)}</td>
@@ -466,11 +498,21 @@ const MenuManagement = () => {
               {group.items.map((item: any) => (
                 <div key={item.id} className="glass rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-xl flex-shrink-0">🍴</div>
-                    )}
+                    <label className="relative group cursor-pointer inline-block flex-shrink-0">
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover" />
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-xl">🍴</div>
+                      )}
+                      <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        {uploadingImageFor === item.id ? (
+                          <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Camera className="h-5 w-5 text-white" />
+                        )}
+                      </div>
+                    </label>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="font-body text-sm font-semibold text-foreground truncate">{item.name}</h3>
