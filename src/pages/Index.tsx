@@ -134,11 +134,14 @@ const Index = () => {
       <GoogleReviews />
 
       {/* Allergy Notice */}
-      <div className="border-t border-border bg-secondary/30 py-4">
-        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
-          <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <p className="font-body text-xs text-muted-foreground">
-            Os nossos pratos podem conter alergénios ou ter contacto cruzado. Se tem alguma alergia, <a href="tel:+351935044022" className="text-primary hover:underline font-medium">contacte-nos</a> antes de encomendar.
+      <div className="border-t border-border bg-secondary/50 py-5">
+        <div className="container mx-auto px-4 flex flex-col items-center gap-2 text-center">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-primary" />
+            <span className="font-display text-sm font-semibold text-foreground">Informação para Alérgicos</span>
+          </div>
+          <p className="font-body text-xs text-muted-foreground max-w-xl">
+            Os nossos pratos podem conter alergénios ou ter contacto cruzado durante o preparo. Se tem alguma alergia ou intolerância alimentar, <a href="tel:+351935044022" className="text-primary hover:underline font-semibold">contacte-nos</a> antes de encomendar.
           </p>
         </div>
       </div>
