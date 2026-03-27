@@ -14,10 +14,17 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 }
 
 function getDeliveryQuote(distanceKm: number) {
-  if (distanceKm <= 3) return { distanceKm: Math.round(distanceKm * 10) / 10, fee: 2, consultRequired: false };
-  if (distanceKm <= 5) return { distanceKm: Math.round(distanceKm * 10) / 10, fee: 3, consultRequired: false };
-  if (distanceKm <= 8) return { distanceKm: Math.round(distanceKm * 10) / 10, fee: 4, consultRequired: false };
-  return { distanceKm: Math.round(distanceKm * 10) / 10, fee: null, consultRequired: true };
+  const roundedDistance = Math.round(distanceKm * 10) / 10;
+
+  if (distanceKm <= 3) {
+    return { distanceKm: roundedDistance, fee: 3.5, consultRequired: false };
+  }
+
+  if (distanceKm <= 5) {
+    return { distanceKm: roundedDistance, fee: roundedDistance, consultRequired: false };
+  }
+
+  return { distanceKm: roundedDistance, fee: null, consultRequired: true };
 }
 
 Deno.serve(async (req) => {

@@ -15,6 +15,22 @@ import { Badge } from "@/components/ui/badge";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
+const uploadMenuImage = async (file: File, itemId?: string) => {
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${itemId || "menu-item"}/${crypto.randomUUID()}.${extension}`;
+
+  const { error } = await supabase.storage.from("menu-images").upload(path, file, {
+    cacheControl: "3600",
+    contentType: file.type || undefined,
+    upsert: false,
+  });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from("menu-images").getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"dashboard" | "menu" | "orders" | "history">("dashboard");
@@ -346,17 +362,14 @@ const MenuManagement = () => {
     if (!file) return;
     setUploadingImageFor(itemId);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("menu-images").upload(path, file);
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from("menu-images").getPublicUrl(path);
-      const { error: updateError } = await supabase.from("menu_items").update({ image_url: urlData.publicUrl }).eq("id", itemId);
+      const imageUrl = await uploadMenuImage(file, itemId);
+      const { error: updateError } = await supabase.from("menu_items").update({ image_url: imageUrl }).eq("id", itemId);
       if (updateError) throw updateError;
       queryClient.invalidateQueries({ queryKey: ["admin-menu-items"] });
       toast.success("Foto atualizada!");
-    } catch {
-      toast.error("Erro ao atualizar foto");
+      e.target.value = "";
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao atualizar foto");
     } finally {
       setUploadingImageFor(null);
     }
@@ -453,21 +466,29 @@ const MenuManagement = () => {
                   {group.items.map((item: any) => (
                     <tr key={item.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                       <td className="py-2 px-4">
-                        <label className="relative group cursor-pointer inline-block">
-                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
-                          {item.image_url ? (
-                            <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
-                          ) : (
-                            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-lg">🍴</div>
-                          )}
-                          <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            {uploadingImageFor === item.id ? (
-                              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="flex flex-col items-start gap-2">
+                          <label className="relative group cursor-pointer inline-block">
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
                             ) : (
-                              <Camera className="h-4 w-4 text-white" />
+                              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-lg">🍴</div>
                             )}
-                          </div>
-                        </label>
+                            <div className="absolute inset-0 rounded-lg bg-foreground/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              {uploadingImageFor === item.id ? (
+                                <div className="h-4 w-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Camera className="h-4 w-4 text-background" />
+                              )}
+                            </div>
+                          </label>
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                          <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-body text-muted-foreground hover:text-foreground transition-colors">
+                            <Camera className="h-3 w-3" />
+                            {uploadingImageFor === item.id ? "A enviar..." : "Alterar foto"}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                          </label>
+                        </div>
                       </td>
                       <td className="py-2 px-4 text-foreground font-medium">{item.name}</td>
                       <td className="py-2 px-4 text-right text-primary font-semibold">€{Number(item.price).toFixed(2)}</td>
@@ -498,21 +519,28 @@ const MenuManagement = () => {
               {group.items.map((item: any) => (
                 <div key={item.id} className="glass rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <label className="relative group cursor-pointer inline-block flex-shrink-0">
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
-                      {item.image_url ? (
-                        <img src={item.image_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover" />
-                      ) : (
-                        <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-xl">🍴</div>
-                      )}
-                      <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        {uploadingImageFor === item.id ? (
-                          <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                      <label className="relative group cursor-pointer inline-block">
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover" />
                         ) : (
-                          <Camera className="h-5 w-5 text-white" />
+                          <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center text-xl">🍴</div>
                         )}
-                      </div>
-                    </label>
+                        <div className="absolute inset-0 rounded-lg bg-foreground/60 flex items-center justify-center opacity-100 transition-opacity">
+                          {uploadingImageFor === item.id ? (
+                            <div className="h-4 w-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Camera className="h-5 w-5 text-background" />
+                          )}
+                        </div>
+                      </label>
+                      <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-body text-muted-foreground hover:text-foreground transition-colors">
+                        <Camera className="h-3 w-3" />
+                        {uploadingImageFor === item.id ? "A enviar..." : "Alterar foto"}
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickImageChange(item.id, e)} disabled={uploadingImageFor === item.id} />
+                      </label>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="font-body text-sm font-semibold text-foreground truncate">{item.name}</h3>
@@ -582,15 +610,12 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("menu-images").upload(path, file);
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from("menu-images").getPublicUrl(path);
-      setImageUrl(urlData.publicUrl);
+      const publicUrl = await uploadMenuImage(file, item?.id);
+      setImageUrl(publicUrl);
       toast.success("Imagem enviada!");
-    } catch {
-      toast.error("Erro ao enviar imagem");
+      e.target.value = "";
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao enviar imagem");
     } finally {
       setUploading(false);
     }
@@ -769,6 +794,11 @@ const OrderManagement = () => {
                     👤 {order.customer_name} • 📞 {order.customer_phone} • {order.delivery_mode === "delivery" ? "🚚 Entrega" : "🏪 Retirada"}
                   </p>
                   {order.address && <p className="font-body text-sm text-muted-foreground">📍 {order.address}</p>}
+                  {order.delivery_mode === "delivery" && (
+                    <p className="font-body text-sm text-muted-foreground mt-1">
+                      💶 Taxa de entrega: <span className="font-semibold text-foreground">€{Number(order.delivery_fee || 0).toFixed(2)}</span>
+                    </p>
+                  )}
 
                   <div className="mt-3 space-y-1">
                     {order.order_items?.map((oi: any) => {
