@@ -150,7 +150,7 @@ const CartPage = () => {
         errs.postalCode = "Código postal inválido (use 4810-647)";
       }
       if (deliveryNeedsConsultation) {
-        errs.delivery = "Acima de 12 km, consulte o estabelecimento para combinar a entrega";
+        errs.delivery = "Acima de 5 km, a entrega fica sujeita à autorização do restaurante";
       } else if (deliveryDistance === null) {
         errs.delivery = "Calcule a taxa de entrega pela morada ou código postal";
       }
@@ -168,6 +168,7 @@ const CartPage = () => {
       delivery_mode: deliveryMode,
       address: deliveryMode === "delivery" ? getFormattedDeliveryAddress() : "",
       notes: orderNotes.trim(),
+      delivery_fee: deliveryMode === "delivery" ? deliveryFee : 0,
       items: items.map((item) => ({
         menu_item_id: item.id,
         quantity: item.quantity,
@@ -459,7 +460,7 @@ const CartPage = () => {
                   <span className="text-primary">€{total.toFixed(2)}</span>
                 </div>
                 {deliveryNeedsConsultation && (
-                  <p className="text-xs text-muted-foreground">A taxa de entrega será confirmada pelo restaurante para distâncias acima de 12 km.</p>
+                  <p className="text-xs text-muted-foreground">A taxa de entrega será confirmada pelo restaurante para distâncias acima de 5 km.</p>
                 )}
               </div>
 

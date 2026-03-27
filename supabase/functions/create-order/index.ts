@@ -22,6 +22,7 @@ interface OrderInput {
   delivery_mode: "delivery" | "pickup";
   address?: string;
   notes?: string;
+  delivery_fee: number;
   items: OrderItemInput[];
 }
 
@@ -42,6 +43,13 @@ function validateInput(body: unknown): { valid: true; data: OrderInput } | { val
   if (delivery_mode === "delivery" && !address) return { valid: false, error: "Endereço obrigatório para entrega" };
 
   const notes = typeof b.notes === "string" ? b.notes.trim().slice(0, 500) : "";
+  const rawDeliveryFee = Number(b.delivery_fee ?? 0);
+
+  if (!Number.isFinite(rawDeliveryFee) || rawDeliveryFee < 0 || rawDeliveryFee > 999) {
+    return { valid: false, error: "Taxa de entrega inválida" };
+  }
+
+  const delivery_fee = delivery_mode === "delivery" ? rawDeliveryFee : 0;
 
   if (!Array.isArray(b.items) || b.items.length === 0 || b.items.length > 50) {
     return { valid: false, error: "Itens inválidos (1-50)" };
@@ -87,7 +95,7 @@ function validateInput(body: unknown): { valid: true; data: OrderInput } | { val
 
   return {
     valid: true,
-    data: { customer_name: name, customer_phone: phone, delivery_mode, address, notes, items },
+    data: { customer_name: name, customer_phone: phone, delivery_mode, address, notes, delivery_fee, items },
   };
 }
 
@@ -235,7 +243,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const total = subtotal + SERVICE_FEE;
+    const total = subtotal + SERVICE_FEE + input.delivery_fee;
 
     // Create order using service role (bypasses RLS)
     const { data: order, error: orderError } = await supabaseAdmin
@@ -249,6 +257,7 @@ Deno.serve(async (req) => {
         notes: input.notes || "",
         total,
         service_fee: SERVICE_FEE,
+        delivery_fee: input.delivery_fee,
         status: "received",
         stripe_payment_id: "",
         customer_ip: clientIp,
