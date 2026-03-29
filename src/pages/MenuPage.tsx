@@ -110,6 +110,8 @@ const MenuPage = () => {
     setMeatPoint("");
     setItemNotes("");
     setItemQty(1);
+    setSelectedDrink("");
+    setSelectedDessert("");
   };
 
   const handleAddToCart = () => {
