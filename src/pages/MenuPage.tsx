@@ -19,6 +19,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import ExecutivoExtras from "@/components/menu/ExecutivoExtras";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -38,6 +39,8 @@ const MenuPage = () => {
   const [meatPoint, setMeatPoint] = useState("");
   const [itemNotes, setItemNotes] = useState("");
   const [itemQty, setItemQty] = useState(1);
+  const [selectedDrink, setSelectedDrink] = useState("");
+  const [selectedDessert, setSelectedDessert] = useState("");
 
   const today = new Date().getDay();
 
@@ -88,7 +91,17 @@ const MenuPage = () => {
     return MEAT_KEYWORDS.some(k => t.includes(k));
   };
   const isExecutivo = (item: any) => item.day_of_week !== null && item.day_of_week !== undefined;
+  const isWeekday = (item: any) => {
+    const d = item.day_of_week;
+    return d !== null && d !== undefined && d >= 1 && d <= 5;
+  };
   const isAvailableToday = (item: any) => !isExecutivo(item) || item.day_of_week === today;
+
+  // Get drinks and desserts for executivo extras
+  const BEBIDAS_CAT_ID = "86dde4c0-b6e8-4743-b772-83484b3934d2";
+  const DOCES_CAT_ID = "5104284f-93fe-449d-ae46-046666e43732";
+  const drinkItems = useMemo(() => menuItems.filter((i: any) => i.category_id === BEBIDAS_CAT_ID), [menuItems]);
+  const dessertItems = useMemo(() => menuItems.filter((i: any) => i.category_id === DOCES_CAT_ID), [menuItems]);
 
   const openCustomize = (item: any) => {
     setCustomizeItem(item);
@@ -97,10 +110,31 @@ const MenuPage = () => {
     setMeatPoint("");
     setItemNotes("");
     setItemQty(1);
+    setSelectedDrink("");
+    setSelectedDessert("");
   };
 
   const handleAddToCart = () => {
     if (!customizeItem) return;
+    const allAddons = [...selectedAddons];
+    
+    // Add drink/dessert for executivos
+    if (isExecutivo(customizeItem)) {
+      const weekday = isWeekday(customizeItem);
+      if (selectedDrink) {
+        const drinkItem = drinkItems.find((d: any) => d.name === selectedDrink);
+        if (drinkItem) {
+          allAddons.push({ name: `Bebida: ${drinkItem.name}`, price: weekday ? 0 : Number(drinkItem.price) });
+        }
+      }
+      if (selectedDessert) {
+        const dessertItem = dessertItems.find((d: any) => d.name === selectedDessert);
+        if (dessertItem) {
+          allAddons.push({ name: `Sobremesa: ${dessertItem.name}`, price: weekday ? 0 : Number(dessertItem.price) });
+        }
+      }
+    }
+    
     addItem({
       id: customizeItem.id,
       name: customizeItem.name,
@@ -110,7 +144,7 @@ const MenuPage = () => {
       notes: itemNotes || undefined,
       customization: {
         removed: removedIngredients,
-        addons: selectedAddons,
+        addons: allAddons,
         meatPoint: meatPoint || undefined,
       },
     });
@@ -122,7 +156,7 @@ const MenuPage = () => {
     const itemAddons = getItemAddons(item);
     const hasIngredients = item.ingredients && item.ingredients.length > 0;
     const needsMeatPoint = hasMeat(item);
-    if (itemAddons.length > 0 || hasIngredients || needsMeatPoint) {
+    if (itemAddons.length > 0 || hasIngredients || needsMeatPoint || isExecutivo(item)) {
       openCustomize(item);
     } else {
       addItem({
@@ -144,7 +178,21 @@ const MenuPage = () => {
     });
   };
 
-  const customizeAddonsTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
+  const extrasTotal = useMemo(() => {
+    let total = selectedAddons.reduce((s, a) => s + a.price, 0);
+    if (customizeItem && isExecutivo(customizeItem) && !isWeekday(customizeItem)) {
+      if (selectedDrink) {
+        const d = drinkItems.find((i: any) => i.name === selectedDrink);
+        if (d) total += Number(d.price);
+      }
+      if (selectedDessert) {
+        const d = dessertItems.find((i: any) => i.name === selectedDessert);
+        if (d) total += Number(d.price);
+      }
+    }
+    return total;
+  }, [selectedAddons, customizeItem, selectedDrink, selectedDessert, drinkItems, dessertItems]);
+  const customizeAddonsTotal = extrasTotal;
   const categoryNames = categories.map((c: any) => c.name);
 
   return (
@@ -387,7 +435,19 @@ const MenuPage = () => {
               </div>
             )}
 
-            {/* Add-ons */}
+            {/* Executivo drink/dessert selection */}
+            {customizeItem && isExecutivo(customizeItem) && (
+              <ExecutivoExtras
+                isWeekday={isWeekday(customizeItem)}
+                drinks={drinkItems}
+                desserts={dessertItems}
+                selectedDrink={selectedDrink}
+                selectedDessert={selectedDessert}
+                onDrinkChange={setSelectedDrink}
+                onDessertChange={setSelectedDessert}
+              />
+            )}
+
             {customizeItem && getItemAddons(customizeItem).length > 0 && (
               <div className="glass rounded-lg p-4">
                 <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
