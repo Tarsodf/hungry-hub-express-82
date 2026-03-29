@@ -203,21 +203,17 @@ const CartPage = () => {
     setSending(true);
 
     try {
-      const orderData = await createOrder();
-
       if (paymentMethod === "card") {
-        // Stripe checkout
+        // For card: create-checkout handles order creation + Stripe session
         const checkoutPayload = {
-          order_id: orderData.order_id,
           customer_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
           delivery_mode: deliveryMode,
-          service_fee: serviceFee,
-          delivery_fee: deliveryFee,
+          address: deliveryMode === "delivery" ? getFormattedDeliveryAddress() : "",
+          notes: orderNotes.trim(),
+          delivery_fee: deliveryMode === "delivery" ? deliveryFee : 0,
           items: items.map((item) => ({
             menu_item_id: item.id,
-            name: item.name,
-            unit_price: item.price,
             quantity: item.quantity,
             customization: {
               removed: item.customization?.removed || [],
@@ -240,12 +236,13 @@ const CartPage = () => {
           window.location.href = checkoutData.url;
           return;
         }
+      } else {
+        // For manual methods (mbway, transfer, cash) — create order then WhatsApp
+        const orderData = await createOrder();
+        sendWhatsApp();
+        toast.success("Pedido enviado com sucesso!");
+        clearCart();
       }
-
-      // For manual methods (mbway, transfer, cash) — send via WhatsApp
-      sendWhatsApp();
-      toast.success("Pedido enviado com sucesso!");
-      clearCart();
     } catch (err: any) {
       console.error("Order error:", err);
       toast.error("Erro ao enviar pedido. Tente novamente.");
