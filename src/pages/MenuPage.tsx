@@ -178,7 +178,21 @@ const MenuPage = () => {
     });
   };
 
-  const customizeAddonsTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
+  const extrasTotal = useMemo(() => {
+    let total = selectedAddons.reduce((s, a) => s + a.price, 0);
+    if (customizeItem && isExecutivo(customizeItem) && !isWeekday(customizeItem)) {
+      if (selectedDrink) {
+        const d = drinkItems.find((i: any) => i.name === selectedDrink);
+        if (d) total += Number(d.price);
+      }
+      if (selectedDessert) {
+        const d = dessertItems.find((i: any) => i.name === selectedDessert);
+        if (d) total += Number(d.price);
+      }
+    }
+    return total;
+  }, [selectedAddons, customizeItem, selectedDrink, selectedDessert, drinkItems, dessertItems]);
+  const customizeAddonsTotal = extrasTotal;
   const categoryNames = categories.map((c: any) => c.name);
 
   return (
