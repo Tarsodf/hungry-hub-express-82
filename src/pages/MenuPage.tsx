@@ -421,7 +421,19 @@ const MenuPage = () => {
               </div>
             )}
 
-            {/* Add-ons */}
+            {/* Executivo drink/dessert selection */}
+            {customizeItem && isExecutivo(customizeItem) && (
+              <ExecutivoExtras
+                isWeekday={isWeekday(customizeItem)}
+                drinks={drinkItems}
+                desserts={dessertItems}
+                selectedDrink={selectedDrink}
+                selectedDessert={selectedDessert}
+                onDrinkChange={setSelectedDrink}
+                onDessertChange={setSelectedDessert}
+              />
+            )}
+
             {customizeItem && getItemAddons(customizeItem).length > 0 && (
               <div className="glass rounded-lg p-4">
                 <Label className="font-body font-semibold text-sm text-foreground flex items-center gap-2">
