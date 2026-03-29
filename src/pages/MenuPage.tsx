@@ -91,7 +91,17 @@ const MenuPage = () => {
     return MEAT_KEYWORDS.some(k => t.includes(k));
   };
   const isExecutivo = (item: any) => item.day_of_week !== null && item.day_of_week !== undefined;
+  const isWeekday = (item: any) => {
+    const d = item.day_of_week;
+    return d !== null && d !== undefined && d >= 1 && d <= 5;
+  };
   const isAvailableToday = (item: any) => !isExecutivo(item) || item.day_of_week === today;
+
+  // Get drinks and desserts for executivo extras
+  const BEBIDAS_CAT_ID = "86dde4c0-b6e8-4743-b772-83484b3934d2";
+  const DOCES_CAT_ID = "5104284f-93fe-449d-ae46-046666e43732";
+  const drinkItems = useMemo(() => menuItems.filter((i: any) => i.category_id === BEBIDAS_CAT_ID), [menuItems]);
+  const dessertItems = useMemo(() => menuItems.filter((i: any) => i.category_id === DOCES_CAT_ID), [menuItems]);
 
   const openCustomize = (item: any) => {
     setCustomizeItem(item);
