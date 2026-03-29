@@ -116,6 +116,25 @@ const MenuPage = () => {
 
   const handleAddToCart = () => {
     if (!customizeItem) return;
+    const allAddons = [...selectedAddons];
+    
+    // Add drink/dessert for executivos
+    if (isExecutivo(customizeItem)) {
+      const weekday = isWeekday(customizeItem);
+      if (selectedDrink) {
+        const drinkItem = drinkItems.find((d: any) => d.name === selectedDrink);
+        if (drinkItem) {
+          allAddons.push({ name: `Bebida: ${drinkItem.name}`, price: weekday ? 0 : Number(drinkItem.price) });
+        }
+      }
+      if (selectedDessert) {
+        const dessertItem = dessertItems.find((d: any) => d.name === selectedDessert);
+        if (dessertItem) {
+          allAddons.push({ name: `Sobremesa: ${dessertItem.name}`, price: weekday ? 0 : Number(dessertItem.price) });
+        }
+      }
+    }
+    
     addItem({
       id: customizeItem.id,
       name: customizeItem.name,
@@ -125,7 +144,7 @@ const MenuPage = () => {
       notes: itemNotes || undefined,
       customization: {
         removed: removedIngredients,
-        addons: selectedAddons,
+        addons: allAddons,
         meatPoint: meatPoint || undefined,
       },
     });
