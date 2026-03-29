@@ -39,6 +39,8 @@ const MenuPage = () => {
   const [meatPoint, setMeatPoint] = useState("");
   const [itemNotes, setItemNotes] = useState("");
   const [itemQty, setItemQty] = useState(1);
+  const [selectedDrink, setSelectedDrink] = useState("");
+  const [selectedDessert, setSelectedDessert] = useState("");
 
   const today = new Date().getDay();
 
