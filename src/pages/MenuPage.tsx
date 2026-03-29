@@ -156,7 +156,7 @@ const MenuPage = () => {
     const itemAddons = getItemAddons(item);
     const hasIngredients = item.ingredients && item.ingredients.length > 0;
     const needsMeatPoint = hasMeat(item);
-    if (itemAddons.length > 0 || hasIngredients || needsMeatPoint) {
+    if (itemAddons.length > 0 || hasIngredients || needsMeatPoint || isExecutivo(item)) {
       openCustomize(item);
     } else {
       addItem({
