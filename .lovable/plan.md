@@ -1,82 +1,54 @@
 
 
-# Dom Bistro Grill - Site de Pedidos Online 🍽️
+## Plano: Reorganizar Cardapio - Regras de Bebida/Sobremesa por Dia
 
-## Visão Geral
-Site completo para o restaurante **Dom Bistro Grill** com cardápio digital, carrinho de compras, pagamento online via Stripe e painel administrativo para gestão total do cardápio.
+### Problemas encontrados nos dados atuais
 
-## Design & Identidade Visual
-- Estilo **quente e acolhedor**: tons de marrom, dourado, bege e bordô
-- Tipografia elegante e convidativa
-- Imagens de destaque para cada prato
-- Layout responsivo (mobile e desktop)
+| Prato | Dia | Descrição diz "Inclui bebida..." | Correto? |
+|---|---|---|---|
+| Picanha | Domingo (0) | Nao | OK (fim de semana) |
+| Executivo Classico | Segunda (1) | Sim | OK |
+| Executivo Dom Bistro | Terca (2) | Sim | OK |
+| Executivo Parmegiana | Quarta (3) | **Nao** | **Falta** |
+| Executivo do Chefe | Quinta (4) | Sim | OK |
+| Executivo Festa Brasileira | Sexta (5) | Sim | OK |
+| Feijoada Completa | Sabado (6) | **Sim** | **Errado** (fim de semana) |
+| Jantinha de Espetinhos | Sem dia | Nao | OK |
 
----
+Duplicatas possiveis: "Bolo de Leite Ninho" (2.00) e "Bolo de Ninho" (4.00); "Suco Natural de Laranja" e "Sumo Natural Laranja"
 
-## Páginas Principais
+### O que sera feito
 
-### 1. Página Inicial
-- Banner hero com imagem do restaurante e slogan
-- Categorias do cardápio em destaque (Pratos Executivos, Hambúrgueres, Espetinhos, Sobremesas, Bebidas, Pastéis)
-- Botão de chamada para ver o cardápio completo
-- Informações de contacto e horário de funcionamento
+**1. Atualizar dados na base de dados (UPDATE)**
 
-### 2. Cardápio Digital
-- Navegação por categorias com abas/filtros
-- Cada item com: **foto, nome, descrição, preço**
-- Botão para adicionar ao carrinho com seleção de quantidade
-- Opção de **personalizar/remover ingredientes** de cada prato (ex: sem cebola, sem queijo)
+- Padronizar todas as descricoes dos executivos de segunda a sexta para incluir "Inclui bebida, sobremesa e cafe."
+- Remover "Inclui bebida, sobremesa e cafe." da Feijoada (sabado) e Picanha (domingo)
+- Corrigir descricao da Parmegiana (quarta) para incluir a frase
+- Padronizar nomes (ex: "Suco" vs "Sumo" - unificar)
 
-### 3. Carrinho de Compras
-- Lista dos itens selecionados com quantidades editáveis
-- Possibilidade de remover itens
-- Resumo do pedido com subtotal e total
-- Escolha do **modo de recebimento**: Entrega ao domicílio ou Retirada no local
-- Campo para endereço de entrega (quando aplicável)
-- Campo para observações do pedido
+**2. Alterar logica no MenuPage.tsx**
 
-### 4. Checkout & Pagamento
-- Integração real com **Stripe** para pagamentos seguros
-- Métodos aceites: **Cartão de Débito, Cartão de Crédito e MB WAY**
-- Confirmação do pedido após pagamento
+- Criar funcao `isWeekday(item)` que verifica se `day_of_week` esta entre 1-5
+- Para executivos de **segunda a sexta**: mostrar na customizacao uma seccao "Escolha sua Bebida" e "Escolha sua Sobremesa" com as opcoes das categorias Bebidas e Bolos & Doces (preco incluido, sem custo extra)
+- Para executivos de **sabado e domingo**: mostrar bebida e sobremesa como **extras pagos** (com preco normal)
+- Manter a regra de que pratos de outros dias aparecem apenas como visualizacao (botao desativado) - ja funciona assim
 
-### 5. Confirmação do Pedido
-- Página com resumo do pedido realizado
-- Número do pedido para acompanhamento
+**3. Estado adicional no dialogo de customizacao**
 
----
+- Adicionar `selectedDrink` e `selectedDessert` ao estado do dialogo
+- Na funcao `handleAddToCart`, incluir bebida e sobremesa como addons no carrinho (com preco 0 para dias de semana, preco normal para fim de semana)
 
-## Painel Administrativo
+### Ficheiros alterados
 
-### 6. Login do Administrador
-- Acesso protegido por autenticação (email/password)
+| Ficheiro | Acao |
+|---|---|
+| Base de dados | UPDATE descricoes via insert tool |
+| `src/pages/MenuPage.tsx` | Adicionar logica de bebida/sobremesa por dia, seccoes no dialogo de customizacao |
 
-### 7. Gestão do Cardápio
-- **Adicionar** novos pratos com foto, nome, descrição, preço e categoria
-- **Editar** qualquer item existente
-- **Remover** itens do cardápio
-- **Ativar/desativar** itens sem apagar
-- Organizar por categorias
+### Detalhes tecnicos
 
-### 8. Gestão de Pedidos
-- Visualizar pedidos recebidos
-- Status do pedido (recebido, em preparação, pronto, entregue)
-
----
-
-## Backend (Lovable Cloud / Supabase)
-- Base de dados para armazenar o cardápio, pedidos e utilizadores
-- Autenticação para o painel administrativo
-- Storage para upload de imagens dos pratos
-- Edge functions para integração com Stripe
-
----
-
-## Categorias do Cardápio
-1. 🍽️ Pratos Executivos
-2. 🍔 Hambúrgueres
-3. 🍢 Espetinhos
-4. 🍰 Sobremesas
-5. 🥤 Bebidas
-6. 🥟 Pastéis
+- Buscar itens das categorias "Bebidas" e "Bolos & Doces" para popular os seletores
+- Executivos de segunda a sexta: bebida e sobremesa com preco 0 nos addons do carrinho
+- Executivos de sabado e domingo: bebida e sobremesa com preco normal nos addons
+- A query de menu items ja carrega todos os itens ativos, so precisa filtrar por categoria
 
