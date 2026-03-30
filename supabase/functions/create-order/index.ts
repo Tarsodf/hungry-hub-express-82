@@ -94,9 +94,11 @@ function validateInput(body: unknown): { valid: true; data: OrderInput } | { val
     });
   }
 
+  const paymentMethod = typeof b.payment_method === "string" ? b.payment_method : "cash";
+
   return {
     valid: true,
-    data: { customer_name: name, customer_phone: phone, delivery_mode, address, notes, delivery_fee, items },
+    data: { customer_name: name, customer_phone: phone, delivery_mode, address, notes, delivery_fee, payment_method: paymentMethod, items },
   };
 }
 
