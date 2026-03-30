@@ -261,6 +261,7 @@ Deno.serve(async (req) => {
         status: "received",
         stripe_payment_id: "",
         customer_ip: clientIp,
+        payment_method: "cash",
       })
       .select("id")
       .single();
