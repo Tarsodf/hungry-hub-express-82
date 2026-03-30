@@ -427,11 +427,52 @@ const CartPage = () => {
                 <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
 
                 {/* Payment info for electronic methods */}
-                {paymentMethod === "mbway" && (
-                  <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                {paymentMethod === "mbway" && !mbwayOrderCreated && (
+                  <div className="rounded-lg bg-secondary/50 border border-border p-3 space-y-1">
+                    <p className="font-body text-xs font-semibold text-foreground">📱 Pagamento MB WAY</p>
                     <p className="font-body text-xs text-muted-foreground">
-                      📱 Será redirecionado para o Stripe. Receberá uma notificação na app MB WAY para aprovar o pagamento.
+                      Após confirmar, envie <strong className="text-foreground">€{total.toFixed(2)}</strong> para o número:
                     </p>
+                    <p className="font-body text-sm font-bold text-primary">+351 930 580 520</p>
+                    <p className="font-body text-xs text-muted-foreground">
+                      Depois envie o comprovativo via WhatsApp para confirmarmos o pedido.
+                    </p>
+                  </div>
+                )}
+                {paymentMethod === "mbway" && mbwayOrderCreated && (
+                  <div className="rounded-lg bg-primary/10 border border-primary p-4 space-y-3">
+                    <p className="font-body text-sm font-bold text-foreground">✅ Pedido criado com sucesso!</p>
+                    {mbwayOrderId && (
+                      <p className="font-body text-xs text-muted-foreground">
+                        Referência: <strong className="text-foreground">{mbwayOrderId.slice(0, 8).toUpperCase()}</strong>
+                      </p>
+                    )}
+                    <div className="space-y-1">
+                      <p className="font-body text-xs text-muted-foreground">
+                        1. Envie <strong className="text-foreground">€{total.toFixed(2)}</strong> via MB WAY para:
+                      </p>
+                      <p className="font-body text-lg font-bold text-primary">+351 930 580 520</p>
+                      <p className="font-body text-xs text-muted-foreground">
+                        2. Envie o comprovativo via WhatsApp:
+                      </p>
+                    </div>
+                    <Button
+                      className="w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white font-body font-bold"
+                      onClick={() => {
+                        const msg = encodeURIComponent(
+                          `📱 *Comprovativo MB WAY*\n\nPedido: ${mbwayOrderId?.slice(0, 8).toUpperCase()}\nNome: ${customerName}\nValor: €${total.toFixed(2)}\n\n(Anexe o comprovativo de pagamento)`
+                        );
+                        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+                      }}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar Comprovativo via WhatsApp
+                    </Button>
+                    <Link to="/cardapio" className="block">
+                      <Button variant="outline" className="w-full font-body text-sm border-border">
+                        Voltar ao Cardápio
+                      </Button>
+                    </Link>
                   </div>
                 )}
                 {paymentMethod === "multibanco" && (
