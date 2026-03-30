@@ -1,6 +1,6 @@
-import { CreditCard, Smartphone, Building2, Banknote } from "lucide-react";
+import { CreditCard, Smartphone, Landmark, Banknote } from "lucide-react";
 
-export type PaymentMethod = "card" | "mbway" | "transfer" | "cash";
+export type PaymentMethod = "card" | "mbway" | "multibanco" | "cash";
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod;
@@ -10,7 +10,7 @@ interface PaymentMethodSelectorProps {
 const methods = [
   { id: "card" as const, label: "Cartão", icon: CreditCard, desc: "Crédito / Débito" },
   { id: "mbway" as const, label: "MB WAY", icon: Smartphone, desc: "Pagamento móvel" },
-  { id: "transfer" as const, label: "Transferência", icon: Building2, desc: "IBAN bancário" },
+  { id: "multibanco" as const, label: "Multibanco", icon: Landmark, desc: "Referência MB" },
   { id: "cash" as const, label: "Dinheiro", icon: Banknote, desc: "Pagar na entrega" },
 ];
 

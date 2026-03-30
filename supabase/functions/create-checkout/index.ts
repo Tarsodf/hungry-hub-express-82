@@ -31,6 +31,7 @@ interface CheckoutInput {
   notes?: string;
   delivery_fee: number;
   items: OrderItemInput[];
+  payment_method?: "card" | "mbway" | "multibanco";
 }
 
 serve(async (req) => {
@@ -75,6 +76,12 @@ serve(async (req) => {
       });
     }
     const deliveryFee = body.delivery_mode === "delivery" ? rawDeliveryFee : 0;
+    const paymentMethod = body.payment_method || "card";
+    if (!["card", "mbway", "multibanco"].includes(paymentMethod)) {
+      return new Response(JSON.stringify({ error: "Método de pagamento inválido" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -286,6 +293,7 @@ serve(async (req) => {
         status: "pending_payment",
         stripe_payment_id: "",
         customer_ip: clientIp,
+        payment_method: paymentMethod,
       })
       .select("id")
       .single();
@@ -316,7 +324,7 @@ serve(async (req) => {
         customer_name: name,
         customer_phone: phone,
       },
-      payment_method_types: ["card"],
+      payment_method_types: paymentMethod === "mbway" ? ["mb_way"] : paymentMethod === "multibanco" ? ["multibanco"] : ["card"],
     });
 
     // Store stripe session id on order
