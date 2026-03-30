@@ -196,8 +196,8 @@ const CartPage = () => {
     setSending(true);
 
     try {
-      if (paymentMethod === "card" || paymentMethod === "mbway" || paymentMethod === "multibanco") {
-        // All electronic methods go through Stripe Checkout
+      if (paymentMethod === "card" || paymentMethod === "multibanco") {
+        // Card and Multibanco go through Stripe Checkout
         const checkoutPayload = {
           customer_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
@@ -230,8 +230,36 @@ const CartPage = () => {
           window.location.href = checkoutData.url;
           return;
         }
+      } else if (paymentMethod === "mbway") {
+        // MB WAY — manual: create order as pending_confirmation
+        const payload = {
+          customer_name: customerName.trim(),
+          customer_phone: customerPhone.trim(),
+          delivery_mode: deliveryMode,
+          address: deliveryMode === "delivery" ? getFormattedDeliveryAddress() : "",
+          notes: orderNotes.trim(),
+          delivery_fee: deliveryMode === "delivery" ? deliveryFee : 0,
+          payment_method: "mbway",
+          items: items.map((item) => ({
+            menu_item_id: item.id,
+            quantity: item.quantity,
+            customization: {
+              removed: item.customization?.removed || [],
+              addons: item.customization?.addons || [],
+              meatPoint: item.customization?.meatPoint || undefined,
+            },
+          })),
+        };
+
+        const { data, error } = await supabase.functions.invoke("create-order", { body: payload });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        setMbwayOrderId(data?.order_id || null);
+        setMbwayOrderCreated(true);
+        toast.success("Pedido criado! Efetue o pagamento via MB WAY.");
       } else {
-        // Cash only — create order then WhatsApp
+        // Cash — create order then WhatsApp
         const orderData = await createOrder();
         sendWhatsApp();
         toast.success("Pedido enviado com sucesso!");
