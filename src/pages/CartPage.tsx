@@ -14,9 +14,6 @@ import PaymentMethodSelector, { type PaymentMethod } from "@/components/PaymentM
 const WHATSAPP_NUMBER = "351930580520";
 const POSTAL_CODE_REGEX = /^\d{4}-?\d{3}$/;
 
-const MBWAY_PHONE = "+351 930 580 520";
-const IBAN = "PT50 0000 0000 0000 0000 0000 0"; // TODO: replace with real IBAN
-
 const CartPage = () => {
   const {
     items,
@@ -68,7 +65,7 @@ const CartPage = () => {
     switch (paymentMethod) {
       case "card": return "💳 Cartão (Crédito/Débito)";
       case "mbway": return "📱 MB WAY";
-      case "transfer": return "🏦 Transferência Bancária";
+      case "multibanco": return "🏧 Multibanco";
       case "cash": return "💵 Dinheiro na entrega";
     }
   };
@@ -113,16 +110,10 @@ const CartPage = () => {
     }
     msg += `🏷️ *Total: €${total.toFixed(2)}*\n`;
 
-    if (paymentMethod === "mbway") {
-      msg += `\n📱 *Pagamento MB WAY pendente*\n`;
-      msg += `Número para envio: ${MBWAY_PHONE}\n`;
-    } else if (paymentMethod === "transfer") {
-      msg += `\n🏦 *Pagamento por Transferência pendente*\n`;
-      msg += `IBAN: ${IBAN}\n`;
-    } else if (paymentMethod === "cash") {
+    if (paymentMethod === "cash") {
       msg += `\n💵 *Pagamento em dinheiro na ${deliveryMode === "delivery" ? "entrega" : "retirada"}*\n`;
-    } else if (paymentMethod === "card") {
-      msg += `\n💳 *Pagamento online realizado via Stripe*\n`;
+    } else {
+      msg += `\n💳 *Pagamento online confirmado*\n`;
     }
 
     if (orderNotes) {
@@ -203,8 +194,8 @@ const CartPage = () => {
     setSending(true);
 
     try {
-      if (paymentMethod === "card") {
-        // For card: create-checkout handles order creation + Stripe session
+      if (paymentMethod === "card" || paymentMethod === "mbway" || paymentMethod === "multibanco") {
+        // All electronic methods go through Stripe Checkout
         const checkoutPayload = {
           customer_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
@@ -212,6 +203,7 @@ const CartPage = () => {
           address: deliveryMode === "delivery" ? getFormattedDeliveryAddress() : "",
           notes: orderNotes.trim(),
           delivery_fee: deliveryMode === "delivery" ? deliveryFee : 0,
+          payment_method: paymentMethod,
           items: items.map((item) => ({
             menu_item_id: item.id,
             quantity: item.quantity,
@@ -237,7 +229,7 @@ const CartPage = () => {
           return;
         }
       } else {
-        // For manual methods (mbway, transfer, cash) — create order then WhatsApp
+        // Cash only — create order then WhatsApp
         const orderData = await createOrder();
         sendWhatsApp();
         toast.success("Pedido enviado com sucesso!");
@@ -256,9 +248,9 @@ const CartPage = () => {
       case "card":
         return { icon: CreditCard, text: "Pagar com Cartão", color: "bg-[#635BFF] hover:bg-[#635BFF]/90" };
       case "mbway":
-        return { icon: Send, text: "Confirmar e Enviar (MB WAY)", color: "bg-[#E4002B] hover:bg-[#E4002B]/90" };
-      case "transfer":
-        return { icon: Send, text: "Confirmar e Enviar (Transferência)", color: "bg-[#0070BA] hover:bg-[#0070BA]/90" };
+        return { icon: CreditCard, text: "Pagar com MB WAY", color: "bg-[#E4002B] hover:bg-[#E4002B]/90" };
+      case "multibanco":
+        return { icon: CreditCard, text: "Pagar com Multibanco", color: "bg-[#0070BA] hover:bg-[#0070BA]/90" };
       case "cash":
         return { icon: Send, text: "Confirmar Pedido (Dinheiro)", color: "bg-[#25D366] hover:bg-[#25D366]/90" };
     }
@@ -404,22 +396,19 @@ const CartPage = () => {
                 {/* Payment Method Selection */}
                 <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
 
-                {/* Payment instructions for manual methods */}
+                {/* Payment info for electronic methods */}
                 {paymentMethod === "mbway" && (
                   <div className="rounded-lg bg-secondary/50 border border-border p-3">
                     <p className="font-body text-xs text-muted-foreground">
-                      📱 Após confirmar, envie o pagamento de <strong className="text-foreground">€{total.toFixed(2)}</strong> via MB WAY para o número:
+                      📱 Será redirecionado para o Stripe. Receberá uma notificação na app MB WAY para aprovar o pagamento.
                     </p>
-                    <p className="mt-1 font-body text-sm font-bold text-foreground">{MBWAY_PHONE}</p>
                   </div>
                 )}
-                {paymentMethod === "transfer" && (
+                {paymentMethod === "multibanco" && (
                   <div className="rounded-lg bg-secondary/50 border border-border p-3">
                     <p className="font-body text-xs text-muted-foreground">
-                      🏦 Após confirmar, transfira <strong className="text-foreground">€{total.toFixed(2)}</strong> para:
+                      🏧 Será redirecionado para o Stripe. Receberá uma referência Multibanco para efetuar o pagamento.
                     </p>
-                    <p className="mt-1 font-body text-xs font-bold text-foreground break-all">{IBAN}</p>
-                    <p className="mt-1 font-body text-[10px] text-muted-foreground">Envie o comprovativo pelo WhatsApp.</p>
                   </div>
                 )}
                 {paymentMethod === "cash" && (

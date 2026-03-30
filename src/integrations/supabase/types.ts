@@ -183,6 +183,7 @@ export type Database = {
           delivery_mode: string
           id: string
           notes: string | null
+          payment_method: string
           service_fee: number
           status: string
           stripe_payment_id: string | null
@@ -200,6 +201,7 @@ export type Database = {
           delivery_mode?: string
           id?: string
           notes?: string | null
+          payment_method?: string
           service_fee?: number
           status?: string
           stripe_payment_id?: string | null
@@ -217,6 +219,7 @@ export type Database = {
           delivery_mode?: string
           id?: string
           notes?: string | null
+          payment_method?: string
           service_fee?: number
           status?: string
           stripe_payment_id?: string | null
