@@ -23,6 +23,7 @@ interface OrderInput {
   address?: string;
   notes?: string;
   delivery_fee: number;
+  payment_method?: string;
   items: OrderItemInput[];
 }
 
