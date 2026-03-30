@@ -261,10 +261,10 @@ Deno.serve(async (req) => {
         total,
         service_fee: SERVICE_FEE,
         delivery_fee: input.delivery_fee,
-        status: "received",
+        status: input.payment_method === "mbway" ? "pending_confirmation" : "received",
         stripe_payment_id: "",
         customer_ip: clientIp,
-        payment_method: "cash",
+        payment_method: input.payment_method || "cash",
       })
       .select("id")
       .single();
