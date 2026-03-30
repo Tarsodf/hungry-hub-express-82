@@ -521,18 +521,20 @@ const CartPage = () => {
                 )}
               </div>
 
-              <Button
-                className={`mt-6 w-full text-white font-body font-bold py-6 ${btnConfig.color}`}
-                onClick={handleSubmitOrder}
-                disabled={sending}
-              >
-                {sending ? (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                  <btnConfig.icon className="mr-2 h-5 w-5" />
-                )}
-                {sending ? "Processando..." : btnConfig.text}
-              </Button>
+              {!mbwayOrderCreated && (
+                <Button
+                  className={`mt-6 w-full text-white font-body font-bold py-6 ${btnConfig.color}`}
+                  onClick={handleSubmitOrder}
+                  disabled={sending}
+                >
+                  {sending ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <btnConfig.icon className="mr-2 h-5 w-5" />
+                  )}
+                  {sending ? "Processando..." : btnConfig.text}
+                </Button>
+              )}
             </div>
           </div>
         </div>
