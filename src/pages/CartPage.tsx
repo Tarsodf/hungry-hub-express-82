@@ -44,6 +44,8 @@ const CartPage = () => {
   const [deliveryNeedsConsultation, setDeliveryNeedsConsultation] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [mbwayOrderCreated, setMbwayOrderCreated] = useState(false);
+  const [mbwayOrderId, setMbwayOrderId] = useState<string | null>(null);
 
   const getFormattedPostalCode = () => {
     const trimmed = postalCode.trim();
@@ -194,8 +196,8 @@ const CartPage = () => {
     setSending(true);
 
     try {
-      if (paymentMethod === "card" || paymentMethod === "mbway" || paymentMethod === "multibanco") {
-        // All electronic methods go through Stripe Checkout
+      if (paymentMethod === "card" || paymentMethod === "multibanco") {
+        // Card and Multibanco go through Stripe Checkout
         const checkoutPayload = {
           customer_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
@@ -228,8 +230,36 @@ const CartPage = () => {
           window.location.href = checkoutData.url;
           return;
         }
+      } else if (paymentMethod === "mbway") {
+        // MB WAY — manual: create order as pending_confirmation
+        const payload = {
+          customer_name: customerName.trim(),
+          customer_phone: customerPhone.trim(),
+          delivery_mode: deliveryMode,
+          address: deliveryMode === "delivery" ? getFormattedDeliveryAddress() : "",
+          notes: orderNotes.trim(),
+          delivery_fee: deliveryMode === "delivery" ? deliveryFee : 0,
+          payment_method: "mbway",
+          items: items.map((item) => ({
+            menu_item_id: item.id,
+            quantity: item.quantity,
+            customization: {
+              removed: item.customization?.removed || [],
+              addons: item.customization?.addons || [],
+              meatPoint: item.customization?.meatPoint || undefined,
+            },
+          })),
+        };
+
+        const { data, error } = await supabase.functions.invoke("create-order", { body: payload });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        setMbwayOrderId(data?.order_id || null);
+        setMbwayOrderCreated(true);
+        toast.success("Pedido criado! Efetue o pagamento via MB WAY.");
       } else {
-        // Cash only — create order then WhatsApp
+        // Cash — create order then WhatsApp
         const orderData = await createOrder();
         sendWhatsApp();
         toast.success("Pedido enviado com sucesso!");
@@ -397,11 +427,52 @@ const CartPage = () => {
                 <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
 
                 {/* Payment info for electronic methods */}
-                {paymentMethod === "mbway" && (
-                  <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                {paymentMethod === "mbway" && !mbwayOrderCreated && (
+                  <div className="rounded-lg bg-secondary/50 border border-border p-3 space-y-1">
+                    <p className="font-body text-xs font-semibold text-foreground">📱 Pagamento MB WAY</p>
                     <p className="font-body text-xs text-muted-foreground">
-                      📱 Será redirecionado para o Stripe. Receberá uma notificação na app MB WAY para aprovar o pagamento.
+                      Após confirmar, envie <strong className="text-foreground">€{total.toFixed(2)}</strong> para o número:
                     </p>
+                    <p className="font-body text-sm font-bold text-primary">+351 930 580 520</p>
+                    <p className="font-body text-xs text-muted-foreground">
+                      Depois envie o comprovativo via WhatsApp para confirmarmos o pedido.
+                    </p>
+                  </div>
+                )}
+                {paymentMethod === "mbway" && mbwayOrderCreated && (
+                  <div className="rounded-lg bg-primary/10 border border-primary p-4 space-y-3">
+                    <p className="font-body text-sm font-bold text-foreground">✅ Pedido criado com sucesso!</p>
+                    {mbwayOrderId && (
+                      <p className="font-body text-xs text-muted-foreground">
+                        Referência: <strong className="text-foreground">{mbwayOrderId.slice(0, 8).toUpperCase()}</strong>
+                      </p>
+                    )}
+                    <div className="space-y-1">
+                      <p className="font-body text-xs text-muted-foreground">
+                        1. Envie <strong className="text-foreground">€{total.toFixed(2)}</strong> via MB WAY para:
+                      </p>
+                      <p className="font-body text-lg font-bold text-primary">+351 930 580 520</p>
+                      <p className="font-body text-xs text-muted-foreground">
+                        2. Envie o comprovativo via WhatsApp:
+                      </p>
+                    </div>
+                    <Button
+                      className="w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white font-body font-bold"
+                      onClick={() => {
+                        const msg = encodeURIComponent(
+                          `📱 *Comprovativo MB WAY*\n\nPedido: ${mbwayOrderId?.slice(0, 8).toUpperCase()}\nNome: ${customerName}\nValor: €${total.toFixed(2)}\n\n(Anexe o comprovativo de pagamento)`
+                        );
+                        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+                      }}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar Comprovativo via WhatsApp
+                    </Button>
+                    <Link to="/cardapio" className="block">
+                      <Button variant="outline" className="w-full font-body text-sm border-border">
+                        Voltar ao Cardápio
+                      </Button>
+                    </Link>
                   </div>
                 )}
                 {paymentMethod === "multibanco" && (
@@ -450,18 +521,20 @@ const CartPage = () => {
                 )}
               </div>
 
-              <Button
-                className={`mt-6 w-full text-white font-body font-bold py-6 ${btnConfig.color}`}
-                onClick={handleSubmitOrder}
-                disabled={sending}
-              >
-                {sending ? (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                  <btnConfig.icon className="mr-2 h-5 w-5" />
-                )}
-                {sending ? "Processando..." : btnConfig.text}
-              </Button>
+              {!mbwayOrderCreated && (
+                <Button
+                  className={`mt-6 w-full text-white font-body font-bold py-6 ${btnConfig.color}`}
+                  onClick={handleSubmitOrder}
+                  disabled={sending}
+                >
+                  {sending ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <btnConfig.icon className="mr-2 h-5 w-5" />
+                  )}
+                  {sending ? "Processando..." : btnConfig.text}
+                </Button>
+              )}
             </div>
           </div>
         </div>

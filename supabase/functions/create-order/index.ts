@@ -23,6 +23,7 @@ interface OrderInput {
   address?: string;
   notes?: string;
   delivery_fee: number;
+  payment_method?: string;
   items: OrderItemInput[];
 }
 
@@ -93,9 +94,11 @@ function validateInput(body: unknown): { valid: true; data: OrderInput } | { val
     });
   }
 
+  const paymentMethod = typeof b.payment_method === "string" ? b.payment_method : "cash";
+
   return {
     valid: true,
-    data: { customer_name: name, customer_phone: phone, delivery_mode, address, notes, delivery_fee, items },
+    data: { customer_name: name, customer_phone: phone, delivery_mode, address, notes, delivery_fee, payment_method: paymentMethod, items },
   };
 }
 
@@ -258,10 +261,10 @@ Deno.serve(async (req) => {
         total,
         service_fee: SERVICE_FEE,
         delivery_fee: input.delivery_fee,
-        status: "received",
+        status: input.payment_method === "mbway" ? "pending_confirmation" : "received",
         stripe_payment_id: "",
         customer_ip: clientIp,
-        payment_method: "cash",
+        payment_method: input.payment_method || "cash",
       })
       .select("id")
       .single();
