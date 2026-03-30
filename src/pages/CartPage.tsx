@@ -44,6 +44,8 @@ const CartPage = () => {
   const [deliveryNeedsConsultation, setDeliveryNeedsConsultation] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [mbwayOrderCreated, setMbwayOrderCreated] = useState(false);
+  const [mbwayOrderId, setMbwayOrderId] = useState<string | null>(null);
 
   const getFormattedPostalCode = () => {
     const trimmed = postalCode.trim();
