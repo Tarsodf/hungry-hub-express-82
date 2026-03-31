@@ -416,11 +416,12 @@ const CartPage = () => {
                       setDeliveryFee(fee, distance);
                       setDeliveryNeedsConsultation(false);
                     }}
-                    onNeedsConsultation={() => {
+                    onConsultRequired={(distance) => {
                       setDeliveryNeedsConsultation(true);
                       clearDeliveryFee();
                     }}
-                    onError={() => resetDeliveryCalculation()}
+                    currentFee={deliveryFee > 0 ? deliveryFee : null}
+                    currentDistance={deliveryDistance}
                   />
                   {errors.delivery && <p className="text-xs text-destructive mt-1">{errors.delivery}</p>}
                 </div>
