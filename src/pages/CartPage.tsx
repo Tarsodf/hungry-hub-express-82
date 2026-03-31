@@ -447,7 +447,7 @@ const CartPage = () => {
             {/* Payment Method */}
             <div className="bg-card rounded-xl border border-border p-5">
               <h2 className="font-display text-lg font-semibold text-foreground mb-4">💳 Método de Pagamento</h2>
-              <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
+              <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
             </div>
 
             {/* MB WAY Instructions */}
