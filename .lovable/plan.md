@@ -1,54 +1,32 @@
 
 
-## Plano: Reorganizar Cardapio - Regras de Bebida/Sobremesa por Dia
+## Plano: Corrigir ficheiros trocados
 
-### Problemas encontrados nos dados atuais
+As alterações manuais trocaram o conteúdo dos ficheiros. Aqui está o que aconteceu:
 
-| Prato | Dia | Descrição diz "Inclui bebida..." | Correto? |
-|---|---|---|---|
-| Picanha | Domingo (0) | Nao | OK (fim de semana) |
-| Executivo Classico | Segunda (1) | Sim | OK |
-| Executivo Dom Bistro | Terca (2) | Sim | OK |
-| Executivo Parmegiana | Quarta (3) | **Nao** | **Falta** |
-| Executivo do Chefe | Quinta (4) | Sim | OK |
-| Executivo Festa Brasileira | Sexta (5) | Sim | OK |
-| Feijoada Completa | Sabado (6) | **Sim** | **Errado** (fim de semana) |
-| Jantinha de Espetinhos | Sem dia | Nao | OK |
+| Ficheiro | Conteúdo atual (ERRADO) | Conteúdo correto |
+|---|---|---|
+| `src/pages/Index.tsx` | Código da edge function create-checkout (Deno/Stripe) | Página inicial do site (homepage) |
+| `supabase/functions/create-checkout/index.ts` | Código do CartPage (React) | Edge function de checkout (Deno/Stripe) |
+| `src/pages/CartPage.tsx` | Apenas um snippet de `handleSubmitOrder` (81 linhas) | Componente completo do carrinho |
 
-Duplicatas possiveis: "Bolo de Leite Ninho" (2.00) e "Bolo de Ninho" (4.00); "Suco Natural de Laranja" e "Sumo Natural Laranja"
+### O que será feito
 
-### O que sera feito
+**1. Restaurar `src/pages/Index.tsx`** como homepage
+- Recriar a página inicial com hero section, botões para cardápio, secção de reviews (GoogleReviews) e informações do restaurante
 
-**1. Atualizar dados na base de dados (UPDATE)**
+**2. Restaurar `supabase/functions/create-checkout/index.ts`** com o código correto da edge function
+- O código que está atualmente em `Index.tsx` (linhas 1-351) é o código correto da edge function — será movido de volta para `create-checkout/index.ts`
 
-- Padronizar todas as descricoes dos executivos de segunda a sexta para incluir "Inclui bebida, sobremesa e cafe."
-- Remover "Inclui bebida, sobremesa e cafe." da Feijoada (sabado) e Picanha (domingo)
-- Corrigir descricao da Parmegiana (quarta) para incluir a frase
-- Padronizar nomes (ex: "Suco" vs "Sumo" - unificar)
+**3. Restaurar `src/pages/CartPage.tsx`** como componente completo
+- Usar o código que está em `create-checkout/index.ts` (que é o CartPage React completo com lógica de pagamento, MB WAY, formulário, etc.) como base
+- Garantir que o JSX completo do carrinho está incluído (a versão atual em `create-checkout` tem `{/* ... restante do layout ... */}` no JSX — será necessário reconstruir o layout completo)
 
-**2. Alterar logica no MenuPage.tsx**
+**4. Deploy da edge function** `create-checkout` após restaurar o código correto
 
-- Criar funcao `isWeekday(item)` que verifica se `day_of_week` esta entre 1-5
-- Para executivos de **segunda a sexta**: mostrar na customizacao uma seccao "Escolha sua Bebida" e "Escolha sua Sobremesa" com as opcoes das categorias Bebidas e Bolos & Doces (preco incluido, sem custo extra)
-- Para executivos de **sabado e domingo**: mostrar bebida e sobremesa como **extras pagos** (com preco normal)
-- Manter a regra de que pratos de outros dias aparecem apenas como visualizacao (botao desativado) - ja funciona assim
+### Detalhes técnicos
 
-**3. Estado adicional no dialogo de customizacao**
-
-- Adicionar `selectedDrink` e `selectedDessert` ao estado do dialogo
-- Na funcao `handleAddToCart`, incluir bebida e sobremesa como addons no carrinho (com preco 0 para dias de semana, preco normal para fim de semana)
-
-### Ficheiros alterados
-
-| Ficheiro | Acao |
-|---|---|
-| Base de dados | UPDATE descricoes via insert tool |
-| `src/pages/MenuPage.tsx` | Adicionar logica de bebida/sobremesa por dia, seccoes no dialogo de customizacao |
-
-### Detalhes tecnicos
-
-- Buscar itens das categorias "Bebidas" e "Bolos & Doces" para popular os seletores
-- Executivos de segunda a sexta: bebida e sobremesa com preco 0 nos addons do carrinho
-- Executivos de sabado e domingo: bebida e sobremesa com preco normal nos addons
-- A query de menu items ja carrega todos os itens ativos, so precisa filtrar por categoria
+- O conteúdo da edge function `create-checkout` (com validação, cálculo server-side, Stripe session, rate limiting) será restaurado a partir do que está em `Index.tsx`
+- A homepage será recriada com a estrutura típica: hero, CTA para cardápio, GoogleReviews
+- O CartPage será reconstruído com o layout completo do carrinho incluindo: lista de itens, formulário de dados, seleção de entrega/retirada, calculadora de taxa, seleção de pagamento, e botões de submissão
 
