@@ -2,8 +2,32 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Phone, UtensilsCrossed } from "lucide-react";
 import GoogleReviews from "@/components/GoogleReviews";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const Index = () => {
+  const { data: featuredItems } = useQuery({
+    queryKey: ["featured-items"],
+    queryFn: async () => {
+      const { data: categories } = await supabase
+        .from("menu_categories")
+        .select("id")
+        .in("name", ["Pratos Executivos", "Hambúrgueres", "Grelhados"]);
+      
+      const categoryIds = categories?.map((c) => c.id) || [];
+      if (categoryIds.length === 0) return [];
+
+      const { data } = await supabase
+        .from("menu_items")
+        .select("id, name, image_url, price, description")
+        .eq("is_active", true)
+        .not("image_url", "is", null)
+        .in("category_id", categoryIds)
+        .limit(8);
+      return data || [];
+    },
+  });
+
   return (
     <main className="bg-background min-h-screen">
       {/* Hero Section */}
@@ -30,6 +54,41 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Featured Dishes Section */}
+      {featuredItems && featuredItems.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 py-16">
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
+            🍽️ Nossos Pratos
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {featuredItems.map((item: any) => (
+              <Link
+                key={item.id}
+                to="/cardapio"
+                className="group rounded-2xl overflow-hidden bg-card border border-border hover:shadow-lg transition-all duration-300"
+              >
+                <div className="aspect-square overflow-hidden">
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-3">
+                  <h3 className="font-display text-sm md:text-base font-semibold text-foreground truncate">
+                    {item.name}
+                  </h3>
+                  <p className="font-body text-sm text-primary font-bold mt-1">
+                    €{item.price.toFixed(2)}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Info Section */}
       <section className="max-w-4xl mx-auto px-4 py-16">
