@@ -126,19 +126,15 @@ const Index = () => {
       {/* Reviews Section */}
       <GoogleReviews />
 
-      {/* CTA Section */}
-      <section className="text-center px-6 py-20">
-        <h2 className="font-display text-2xl md:text-3xl font-bold text-white mb-4">
-          Pronto para pedir?
-        </h2>
-        <p className="font-body text-gray-400 mb-8">
-          Escolha o seu prato favorito e receba em casa!
+      {/* Informação para Alérgicos */}
+      <section className="border-t border-white/10 py-10 px-6 text-center">
+        <h3 className="font-display text-base font-semibold text-white mb-2 flex items-center justify-center gap-2">
+          ⚠️ Informação para Alérgicos
+        </h3>
+        <p className="font-body text-sm text-gray-400 max-w-2xl mx-auto">
+          Os nossos pratos podem conter alergénios ou ter contacto cruzado durante o preparo. Se tem alguma alergia ou intolerância alimentar,{" "}
+          <a href="tel:+351930580520" className="text-orange-500 font-semibold hover:underline">contacte-nos</a> antes de encomendar.
         </p>
-        <Link to="/cardapio">
-          <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-body text-lg px-12 py-6 rounded-lg">
-            Fazer Pedido
-          </Button>
-        </Link>
       </section>
     </main>
   );
