@@ -282,7 +282,8 @@ const DashboardView = () => {
         </div>
       </div>
 
-      <div className="glass rounded-xl p-5">
+      {/* Delivery Fee Stats */}
+      <DeliveryFeeStats orders={allOrders} period={period} periodLabels={periodLabels} />
         <h3 className="font-body text-sm font-semibold text-foreground mb-4">Pedidos Recentes</h3>
         {filteredOrders.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Nenhum pedido no período</p>
