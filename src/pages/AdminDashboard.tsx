@@ -889,6 +889,33 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Crop Dialog */}
+    <Dialog open={cropDialogOpen} onOpenChange={(v) => { if (!v) { setCropDialogOpen(false); setRawImageSrc(null); } }}>
+      <DialogContent className="sm:max-w-xl bg-card border-border max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Crop className="h-5 w-5 text-primary" /> Recortar Imagem
+          </DialogTitle>
+        </DialogHeader>
+        {rawImageSrc && (
+          <div className="space-y-4">
+            <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={undefined}>
+              <img ref={imgRef} src={rawImageSrc} alt="Recortar" onLoad={onImageLoad} className="max-h-[60vh] w-full object-contain" />
+            </ReactCrop>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => { setCropDialogOpen(false); setRawImageSrc(null); }}>
+                Cancelar
+              </Button>
+              <Button type="button" className="flex-1 bg-primary text-primary-foreground" onClick={handleCropAndUpload} disabled={uploading}>
+                {uploading ? "A enviar..." : "Recortar e Enviar"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
