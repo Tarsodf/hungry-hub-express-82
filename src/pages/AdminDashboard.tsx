@@ -442,12 +442,15 @@ const DeliveryFeeStats = ({ orders, period, periodLabels }: { orders: any[]; per
   );
 };
 
+const StatusBadge = ({ status }: { status: string }) => {
   const config: Record<string, { label: string; className: string }> = {
     received: { label: "Recebido", className: "bg-blue-500/20 text-blue-400" },
     preparing: { label: "Preparando", className: "bg-yellow-500/20 text-yellow-400" },
     ready: { label: "Pronto", className: "bg-green-500/20 text-green-400" },
     delivered: { label: "Entregue", className: "bg-muted text-muted-foreground" },
     cancelled: { label: "Cancelado", className: "bg-destructive/20 text-destructive" },
+    pending_confirmation: { label: "Aguardando", className: "bg-orange-500/20 text-orange-400" },
+    pending_payment: { label: "Pagamento Pendente", className: "bg-yellow-500/20 text-yellow-400" },
   };
   const c = config[status] || { label: status, className: "bg-secondary text-muted-foreground" };
   return <span className={`text-xs px-2 py-1 rounded-full font-medium ${c.className}`}>{c.label}</span>;
