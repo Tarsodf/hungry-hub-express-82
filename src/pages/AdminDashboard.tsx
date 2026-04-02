@@ -344,7 +344,104 @@ const DashboardView = () => {
   );
 };
 
-const StatusBadge = ({ status }: { status: string }) => {
+// ---- Delivery Fee Stats ----
+const DeliveryFeeStats = ({ orders, period, periodLabels }: { orders: any[]; period: PeriodFilter; periodLabels: Record<PeriodFilter, string> }) => {
+  const deliveryOrders = useMemo(() => {
+    const start = getStartDate(period);
+    const filtered = start ? orders.filter((o: any) => new Date(o.created_at) >= start) : orders;
+    return filtered.filter((o: any) => o.delivery_mode === "delivery" && Number(o.delivery_fee) > 0);
+  }, [orders, period]);
+
+  const stats = useMemo(() => {
+    const now = new Date();
+    const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
+    const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay()); startOfWeek.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const allDelivery = orders.filter((o: any) => o.delivery_mode === "delivery" && Number(o.delivery_fee) > 0);
+    const todayDelivery = allDelivery.filter((o: any) => new Date(o.created_at) >= startOfDay);
+    const weekDelivery = allDelivery.filter((o: any) => new Date(o.created_at) >= startOfWeek);
+    const monthDelivery = allDelivery.filter((o: any) => new Date(o.created_at) >= startOfMonth);
+
+    const sum = (arr: any[]) => arr.reduce((s: number, o: any) => s + Number(o.delivery_fee), 0);
+    return {
+      today: { total: sum(todayDelivery), count: todayDelivery.length },
+      week: { total: sum(weekDelivery), count: weekDelivery.length },
+      month: { total: sum(monthDelivery), count: monthDelivery.length },
+    };
+  }, [orders]);
+
+  const dailyDeliveries = useMemo(() => {
+    const map: Record<string, { count: number; total: number; orders: { id: string; customer: string; fee: number; time: string }[] }> = {};
+    deliveryOrders.forEach((o: any) => {
+      const day = new Date(o.created_at).toLocaleDateString("pt-PT");
+      if (!map[day]) map[day] = { count: 0, total: 0, orders: [] };
+      map[day].count++;
+      map[day].total += Number(o.delivery_fee);
+      map[day].orders.push({
+        id: o.id.slice(0, 6),
+        customer: o.customer_name || "—",
+        fee: Number(o.delivery_fee),
+        time: new Date(o.created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }),
+      });
+    });
+    return Object.entries(map).slice(0, 30);
+  }, [deliveryOrders]);
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+        <Truck className="h-5 w-5 text-primary" /> Taxas de Entrega — Relatório do Entregador
+      </h3>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: "Hoje", value: stats.today.total, count: stats.today.count },
+          { label: "Esta Semana", value: stats.week.total, count: stats.week.count },
+          { label: "Este Mês", value: stats.month.total, count: stats.month.count },
+        ].map((s) => (
+          <div key={s.label} className="glass rounded-xl p-5 text-center">
+            <p className="font-body text-xs text-muted-foreground">{s.label}</p>
+            <p className="font-display text-2xl font-bold text-primary mt-1">€{s.value.toFixed(2)}</p>
+            <p className="font-body text-xs text-muted-foreground mt-1">{s.count} {s.count === 1 ? "entrega" : "entregas"}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="glass rounded-xl overflow-hidden">
+        <div className="px-4 py-3 bg-secondary/50 border-b border-border">
+          <h4 className="font-body text-sm font-semibold text-foreground">Detalhe por Dia ({periodLabels[period]})</h4>
+        </div>
+        {dailyDeliveries.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Nenhuma entrega no período</p>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {dailyDeliveries.map(([day, data]) => (
+              <div key={day} className="px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-body text-sm font-semibold text-foreground">{day}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-body text-xs text-muted-foreground">{data.count} {data.count === 1 ? "entrega" : "entregas"}</span>
+                    <span className="font-body text-sm font-bold text-primary">€{data.total.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {data.orders.map((o) => (
+                    <div key={o.id} className="flex items-center justify-between font-body text-xs text-muted-foreground">
+                      <span>#{o.id} • {o.time} • {o.customer}</span>
+                      <span className="text-foreground font-medium">€{o.fee.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
   const config: Record<string, { label: string; className: string }> = {
     received: { label: "Recebido", className: "bg-blue-500/20 text-blue-400" },
     preparing: { label: "Preparando", className: "bg-yellow-500/20 text-yellow-400" },
