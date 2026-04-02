@@ -699,6 +699,12 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
   const [dayOfWeek, setDayOfWeek] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState<CropType>();
+  const [completedCrop, setCompletedCrop] = useState<CropType>();
+  const imgRef = useRef<HTMLImageElement>(null);
+  const rawFileRef = useRef<File | null>(null);
 
   useEffect(() => {
     if (item) {
@@ -711,7 +717,64 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
     }
   }, [item, open]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const c = centerCrop(makeAspectCrop({ unit: "%", width: 90 }, 4 / 3, width, height), width, height);
+    setCrop(c);
+    setCompletedCrop(c);
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    rawFileRef.current = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setRawImageSrc(reader.result as string);
+      setCropDialogOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const getCroppedBlob = async (): Promise<Blob | null> => {
+    if (!imgRef.current || !completedCrop) return null;
+    const image = imgRef.current;
+    const canvas = document.createElement("canvas");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    const pixelCrop = {
+      x: (completedCrop.unit === "%" ? (completedCrop.x / 100) * image.width : completedCrop.x) * scaleX,
+      y: (completedCrop.unit === "%" ? (completedCrop.y / 100) * image.height : completedCrop.y) * scaleY,
+      width: (completedCrop.unit === "%" ? (completedCrop.width / 100) * image.width : completedCrop.width) * scaleX,
+      height: (completedCrop.unit === "%" ? (completedCrop.height / 100) * image.height : completedCrop.height) * scaleY,
+    };
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+    return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+  };
+
+  const handleCropAndUpload = async () => {
+    setUploading(true);
+    try {
+      const blob = await getCroppedBlob();
+      if (!blob) throw new Error("Falha ao recortar imagem");
+      const file = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+      const publicUrl = await uploadMenuImage(file, item?.id);
+      setImageUrl(publicUrl);
+      toast.success("Imagem recortada e enviada!");
+      setCropDialogOpen(false);
+      setRawImageSrc(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao enviar imagem");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
@@ -751,6 +814,7 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
   });
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -760,7 +824,21 @@ const MenuItemDialog = ({ open, onOpenChange, item, categories }: { open: boolea
           <div>
             <Label className="font-body text-sm">Imagem do Produto</Label>
             {imageUrl && <img src={imageUrl} alt="Preview" className="mt-2 h-32 w-full rounded-lg object-cover" />}
-            <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="mt-2 bg-secondary border-border" />
+            <div className="flex gap-2 mt-2">
+              <div className="flex-1">
+                <Label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-md bg-secondary border border-border text-sm font-body text-muted-foreground hover:text-foreground transition-colors w-full justify-center">
+                  <Camera className="h-4 w-4" /> Enviar Foto
+                  <input type="file" accept="image/*" onChange={handleDirectUpload} disabled={uploading} className="hidden" />
+                </Label>
+              </div>
+              <div className="flex-1">
+                <Label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-md bg-secondary border border-border text-sm font-body text-muted-foreground hover:text-foreground transition-colors w-full justify-center">
+                  <Crop className="h-4 w-4" /> Recortar e Enviar
+                  <input type="file" accept="image/*" onChange={handleFileSelect} disabled={uploading} className="hidden" />
+                </Label>
+              </div>
+            </div>
+            {uploading && <p className="font-body text-xs text-muted-foreground mt-1">A enviar...</p>}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
