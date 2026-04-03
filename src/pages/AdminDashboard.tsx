@@ -1194,9 +1194,9 @@ const SiteSettingsEditor = () => {
   });
 
   useEffect(() => {
-    if (settings) {
+    if (settings && Array.isArray(settings)) {
       const map: Record<string, string> = {};
-      settings.forEach((s) => { map[s.key] = s.value; });
+      settings.forEach((s: any) => { map[s.key] = s.value; });
       setForm(map);
     }
   }, [settings]);
