@@ -11,7 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, LogOut, Package, LayoutDashboard, History, UtensilsCrossed, TrendingUp, ShoppingCart, DollarSign, BarChart3, AlertTriangle, Calendar, Camera, Truck, Crop } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Package, LayoutDashboard, History, UtensilsCrossed, TrendingUp, ShoppingCart, DollarSign, BarChart3, AlertTriangle, Calendar, Camera, Truck, Crop, Settings } from "lucide-react";
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +36,7 @@ const uploadMenuImage = async (file: File, itemId?: string) => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "menu" | "orders" | "history">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "menu" | "orders" | "history" | "settings">("dashboard");
 
   // Auth is now handled by ProtectedRoute wrapper in App.tsx
 
@@ -50,6 +50,7 @@ const AdminDashboard = () => {
     { id: "menu" as const, label: "Cardápio", icon: UtensilsCrossed },
     { id: "orders" as const, label: "Pedidos", icon: Package },
     { id: "history" as const, label: "Histórico", icon: History },
+    { id: "settings" as const, label: "Configurações", icon: Settings },
   ];
 
   return (
@@ -92,6 +93,7 @@ const AdminDashboard = () => {
         {activeTab === "menu" && <MenuManagement />}
         {activeTab === "orders" && <OrderManagement />}
         {activeTab === "history" && <HistoryView />}
+        {activeTab === "settings" && <SiteSettingsEditor />}
       </div>
     </main>
   );
@@ -1155,6 +1157,103 @@ const HistoryView = () => {
             )}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+};
+
+// ---- Site Settings Editor ----
+const SETTINGS_FIELDS = [
+  { key: "address_line1", label: "Endereço — Linha 1", group: "Localização" },
+  { key: "address_line2", label: "Endereço — Linha 2", group: "Localização" },
+  { key: "address_line3", label: "Cidade / Código Postal", group: "Localização" },
+  { key: "phone", label: "Telefone", group: "Contactos" },
+  { key: "email", label: "Email", group: "Contactos" },
+  { key: "instagram_url", label: "Link do Instagram", group: "Redes Sociais" },
+  { key: "instagram_handle", label: "Nome do Instagram (ex: @nome)", group: "Redes Sociais" },
+  { key: "hours_weekday_label", label: "Dias da semana — Rótulo", group: "Horário" },
+  { key: "hours_weekday_time", label: "Dias da semana — Horário", group: "Horário" },
+  { key: "hours_saturday_label", label: "Sábado — Rótulo", group: "Horário" },
+  { key: "hours_saturday_time", label: "Sábado — Horário", group: "Horário" },
+  { key: "hours_sunday_label", label: "Domingo — Rótulo", group: "Horário" },
+  { key: "hours_sunday_time", label: "Domingo — Horário", group: "Horário" },
+];
+
+const SiteSettingsEditor = () => {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_settings").select("*");
+      if (error) throw error;
+      return data as { id: string; key: string; value: string }[];
+    },
+  });
+
+  useEffect(() => {
+    if (settings) {
+      const map: Record<string, string> = {};
+      settings.forEach((s) => { map[s.key] = s.value; });
+      setForm(map);
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      for (const field of SETTINGS_FIELDS) {
+        const current = settings?.find((s) => s.key === field.key);
+        const newVal = form[field.key] ?? "";
+        if (current && current.value !== newVal) {
+          const { error } = await supabase
+            .from("site_settings")
+            .update({ value: newVal, updated_at: new Date().toISOString() })
+            .eq("key", field.key);
+          if (error) throw error;
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["site_settings"] });
+      toast.success("Configurações guardadas com sucesso!");
+    } catch (e: any) {
+      toast.error("Erro ao guardar: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading) return <div className="text-center py-12 text-muted-foreground">A carregar...</div>;
+
+  const groups = [...new Set(SETTINGS_FIELDS.map((f) => f.group))];
+
+  return (
+    <div>
+      <h2 className="font-display text-xl font-semibold text-foreground mb-6">Configurações do Rodapé</h2>
+      <div className="space-y-8">
+        {groups.map((group) => (
+          <div key={group} className="glass rounded-xl p-6">
+            <h3 className="font-display text-lg font-semibold text-foreground mb-4">{group}</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              {SETTINGS_FIELDS.filter((f) => f.group === group).map((field) => (
+                <div key={field.key}>
+                  <Label className="font-body text-sm text-muted-foreground mb-1">{field.label}</Label>
+                  <Input
+                    value={form[field.key] || ""}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                    className="font-body"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 flex justify-end">
+        <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground font-body">
+          {saving ? "A guardar..." : "Guardar Alterações"}
+        </Button>
       </div>
     </div>
   );

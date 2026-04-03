@@ -1,6 +1,38 @@
 import { MapPin, Clock, Phone, Mail, Truck, Instagram } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+const DEFAULTS: Record<string, string> = {
+  address_line1: "Alam São Damasco - S. Francisco",
+  address_line2: "Centro 35, N/A",
+  address_line3: "4810-286 Guimarães, Portugal",
+  phone: "+351 930 580 520",
+  email: "bistrogrillr@gmail.com",
+  instagram_url: "https://www.instagram.com/dombistrogrill",
+  instagram_handle: "@dombistrogrill",
+  hours_weekday_label: "Segunda a Sexta",
+  hours_weekday_time: "11:00 - 22:00",
+  hours_saturday_label: "Sábado",
+  hours_saturday_time: "11:00 - 23:00",
+  hours_sunday_label: "Domingo",
+  hours_sunday_time: "12:00 - 21:00",
+};
 
 const Footer = () => {
+  const { data: settings } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_settings").select("key, value");
+      if (error) throw error;
+      const map: Record<string, string> = { ...DEFAULTS };
+      (data as { key: string; value: string }[]).forEach((s) => { map[s.key] = s.value; });
+      return map;
+    },
+    staleTime: 60_000,
+  });
+
+  const s = settings || DEFAULTS;
+
   return (
     <footer className="border-t border-border bg-card">
       <div className="container mx-auto px-4 py-12">
@@ -26,25 +58,25 @@ const Footer = () => {
               <MapPin className="h-4 w-4 text-primary" /> Localização
             </h4>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Alam São Damasco - S. Francisco</p>
-              <p>Centro 35, N/A</p>
-              <p>4810-286 Guimarães, Portugal</p>
+              <p>{s.address_line1}</p>
+              <p>{s.address_line2}</p>
+              <p>{s.address_line3}</p>
               <div className="flex items-center gap-2 pt-2">
                 <Phone className="h-4 w-4 text-primary" />
-                <span>+351 930 580 520</span>
+                <span>{s.phone}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
-                <span>bistrogrillr@gmail.com</span>
+                <span>{s.email}</span>
               </div>
               <a
-                href="https://www.instagram.com/dombistrogrill"
+                href={s.instagram_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 transition-colors hover:text-primary"
               >
                 <Instagram className="h-4 w-4 text-primary" />
-                <span>@dombistrogrill</span>
+                <span>{s.instagram_handle}</span>
               </a>
             </div>
           </div>
@@ -55,16 +87,16 @@ const Footer = () => {
             </h4>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Segunda a Sexta</span>
-                <span className="font-medium text-foreground">11:00 - 22:00</span>
+                <span className="text-muted-foreground">{s.hours_weekday_label}</span>
+                <span className="font-medium text-foreground">{s.hours_weekday_time}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Sábado</span>
-                <span className="font-medium text-foreground">11:00 - 23:00</span>
+                <span className="text-muted-foreground">{s.hours_saturday_label}</span>
+                <span className="font-medium text-foreground">{s.hours_saturday_time}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Domingo</span>
-                <span className="font-medium text-foreground">12:00 - 21:00</span>
+                <span className="text-muted-foreground">{s.hours_sunday_label}</span>
+                <span className="font-medium text-foreground">{s.hours_sunday_time}</span>
               </div>
             </div>
           </div>
