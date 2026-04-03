@@ -93,6 +93,7 @@ const AdminDashboard = () => {
         {activeTab === "menu" && <MenuManagement />}
         {activeTab === "orders" && <OrderManagement />}
         {activeTab === "history" && <HistoryView />}
+        {activeTab === "settings" && <SiteSettingsEditor />}
       </div>
     </main>
   );
