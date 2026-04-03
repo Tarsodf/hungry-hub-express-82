@@ -1162,4 +1162,101 @@ const HistoryView = () => {
   );
 };
 
+// ---- Site Settings Editor ----
+const SETTINGS_FIELDS = [
+  { key: "address_line1", label: "Endereço — Linha 1", group: "Localização" },
+  { key: "address_line2", label: "Endereço — Linha 2", group: "Localização" },
+  { key: "address_line3", label: "Cidade / Código Postal", group: "Localização" },
+  { key: "phone", label: "Telefone", group: "Contactos" },
+  { key: "email", label: "Email", group: "Contactos" },
+  { key: "instagram_url", label: "Link do Instagram", group: "Redes Sociais" },
+  { key: "instagram_handle", label: "Nome do Instagram (ex: @nome)", group: "Redes Sociais" },
+  { key: "hours_weekday_label", label: "Dias da semana — Rótulo", group: "Horário" },
+  { key: "hours_weekday_time", label: "Dias da semana — Horário", group: "Horário" },
+  { key: "hours_saturday_label", label: "Sábado — Rótulo", group: "Horário" },
+  { key: "hours_saturday_time", label: "Sábado — Horário", group: "Horário" },
+  { key: "hours_sunday_label", label: "Domingo — Rótulo", group: "Horário" },
+  { key: "hours_sunday_time", label: "Domingo — Horário", group: "Horário" },
+];
+
+const SiteSettingsEditor = () => {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_settings").select("*");
+      if (error) throw error;
+      return data as { id: string; key: string; value: string }[];
+    },
+  });
+
+  useEffect(() => {
+    if (settings) {
+      const map: Record<string, string> = {};
+      settings.forEach((s) => { map[s.key] = s.value; });
+      setForm(map);
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      for (const field of SETTINGS_FIELDS) {
+        const current = settings?.find((s) => s.key === field.key);
+        const newVal = form[field.key] ?? "";
+        if (current && current.value !== newVal) {
+          const { error } = await supabase
+            .from("site_settings")
+            .update({ value: newVal, updated_at: new Date().toISOString() })
+            .eq("key", field.key);
+          if (error) throw error;
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["site_settings"] });
+      toast.success("Configurações guardadas com sucesso!");
+    } catch (e: any) {
+      toast.error("Erro ao guardar: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading) return <div className="text-center py-12 text-muted-foreground">A carregar...</div>;
+
+  const groups = [...new Set(SETTINGS_FIELDS.map((f) => f.group))];
+
+  return (
+    <div>
+      <h2 className="font-display text-xl font-semibold text-foreground mb-6">Configurações do Rodapé</h2>
+      <div className="space-y-8">
+        {groups.map((group) => (
+          <div key={group} className="glass rounded-xl p-6">
+            <h3 className="font-display text-lg font-semibold text-foreground mb-4">{group}</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              {SETTINGS_FIELDS.filter((f) => f.group === group).map((field) => (
+                <div key={field.key}>
+                  <Label className="font-body text-sm text-muted-foreground mb-1">{field.label}</Label>
+                  <Input
+                    value={form[field.key] || ""}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                    className="font-body"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 flex justify-end">
+        <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground font-body">
+          {saving ? "A guardar..." : "Guardar Alterações"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
