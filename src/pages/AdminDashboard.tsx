@@ -533,6 +533,21 @@ const MenuManagement = () => {
         groups["uncategorized"].items.push(item);
       }
     });
+    // Sort items within each group: executivo items by day_of_week (Mon=1 → Sun=0 mapped to 7)
+    Object.values(groups).forEach((g) => {
+      g.items.sort((a: any, b: any) => {
+        const aDow = a.day_of_week;
+        const bDow = b.day_of_week;
+        // Items without day_of_week go after sorted ones
+        if (aDow === null && bDow === null) return 0;
+        if (aDow === null) return 1;
+        if (bDow === null) return -1;
+        // Map Sunday (0) to 7 so Monday (1) comes first
+        const aSort = aDow === 0 ? 7 : aDow;
+        const bSort = bDow === 0 ? 7 : bDow;
+        return aSort - bSort;
+      });
+    });
     // Return only groups that have items
     return Object.values(groups).filter((g) => g.items.length > 0);
   }, [items, categories]);
