@@ -1183,6 +1183,7 @@ const SiteSettingsEditor = () => {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [dbSnapshot, setDbSnapshot] = useState<Record<string, string>>({});
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["site_settings"],
@@ -1198,6 +1199,7 @@ const SiteSettingsEditor = () => {
       const map: Record<string, string> = {};
       settings.forEach((s: any) => { map[s.key] = s.value; });
       setForm(map);
+      setDbSnapshot(map);
     }
   }, [settings]);
 
@@ -1205,9 +1207,9 @@ const SiteSettingsEditor = () => {
     setSaving(true);
     try {
       for (const field of SETTINGS_FIELDS) {
-        const current = settings?.find((s) => s.key === field.key);
-        const newVal = form[field.key] ?? "";
-        if (current && current.value !== newVal) {
+        const newVal = form[field.key];
+        const oldVal = dbSnapshot[field.key];
+        if (newVal !== undefined && newVal !== oldVal) {
           const { error } = await supabase
             .from("site_settings")
             .update({ value: newVal, updated_at: new Date().toISOString() })
