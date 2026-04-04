@@ -962,11 +962,11 @@ const OrderManagement = () => {
   });
 
   const statusLabels: Record<string, string> = {
-    received: "Recebido", preparing: "Em Preparação", ready: "Pronto", delivered: "Entregue", cancelled: "Cancelado"
+    pending_payment: "Pagamento Pendente", pending_confirmation: "Aguardando Confirmação", received: "Recebido", preparing: "Em Preparação", ready: "Pronto", delivered: "Entregue", cancelled: "Cancelado"
   };
 
   const filteredOrders = useMemo(() => {
-    if (filter === "pending") return orders.filter((o: any) => ["received", "preparing", "ready"].includes(o.status));
+    if (filter === "pending") return orders.filter((o: any) => ["pending_payment", "pending_confirmation", "received", "preparing", "ready"].includes(o.status));
     if (filter === "done") return orders.filter((o: any) => ["delivered", "cancelled"].includes(o.status));
     return orders;
   }, [orders, filter]);
@@ -1020,6 +1020,7 @@ const OrderManagement = () => {
                   </div>
                   <p className="font-body text-sm text-muted-foreground mt-1">
                     👤 {order.customer_name} • 📞 {order.customer_phone} • {order.delivery_mode === "delivery" ? "🚚 Entrega" : "🏪 Retirada"}
+                    {order.payment_method && <span className="ml-1">• 💳 {({card:"Cartão",mbway:"MB WAY",multibanco:"Multibanco",cash:"Dinheiro"} as Record<string,string>)[order.payment_method] || order.payment_method}</span>}
                   </p>
                   {order.address && <p className="font-body text-sm text-muted-foreground">📍 {order.address}</p>}
                   {order.delivery_mode === "delivery" && (
