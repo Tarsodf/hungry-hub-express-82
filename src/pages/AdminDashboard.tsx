@@ -966,7 +966,7 @@ const OrderManagement = () => {
   };
 
   const filteredOrders = useMemo(() => {
-    if (filter === "pending") return orders.filter((o: any) => ["received", "preparing", "ready"].includes(o.status));
+    if (filter === "pending") return orders.filter((o: any) => ["pending_payment", "pending_confirmation", "received", "preparing", "ready"].includes(o.status));
     if (filter === "done") return orders.filter((o: any) => ["delivered", "cancelled"].includes(o.status));
     return orders;
   }, [orders, filter]);
