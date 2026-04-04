@@ -1020,6 +1020,7 @@ const OrderManagement = () => {
                   </div>
                   <p className="font-body text-sm text-muted-foreground mt-1">
                     👤 {order.customer_name} • 📞 {order.customer_phone} • {order.delivery_mode === "delivery" ? "🚚 Entrega" : "🏪 Retirada"}
+                    {order.payment_method && <span className="ml-1">• 💳 {({card:"Cartão",mbway:"MB WAY",multibanco:"Multibanco",cash:"Dinheiro"} as Record<string,string>)[order.payment_method] || order.payment_method}</span>}
                   </p>
                   {order.address && <p className="font-body text-sm text-muted-foreground">📍 {order.address}</p>}
                   {order.delivery_mode === "delivery" && (
