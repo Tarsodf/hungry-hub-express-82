@@ -962,7 +962,7 @@ const OrderManagement = () => {
   });
 
   const statusLabels: Record<string, string> = {
-    received: "Recebido", preparing: "Em Preparação", ready: "Pronto", delivered: "Entregue", cancelled: "Cancelado"
+    pending_payment: "Pagamento Pendente", pending_confirmation: "Aguardando Confirmação", received: "Recebido", preparing: "Em Preparação", ready: "Pronto", delivered: "Entregue", cancelled: "Cancelado"
   };
 
   const filteredOrders = useMemo(() => {
