@@ -36,7 +36,7 @@ const uploadMenuImage = async (file: File, itemId?: string) => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "menu" | "orders" | "history" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "menu" | "orders" | "history" | "reservations" | "settings">("dashboard");
 
   // Auth is now handled by ProtectedRoute wrapper in App.tsx
 
