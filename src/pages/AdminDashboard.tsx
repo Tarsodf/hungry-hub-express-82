@@ -1264,4 +1264,144 @@ const SiteSettingsEditor = () => {
   );
 };
 
+// ── Reservation Management ──────────────────────────────────────
+const ReservationManagement = () => {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const { data: reservations = [], isLoading } = useQuery({
+    queryKey: ["reservations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reservations" as any)
+        .select("*")
+        .order("date", { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from("reservations" as any)
+        .update({ status } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reservations"] });
+      toast.success("Reserva atualizada!");
+    },
+    onError: () => toast.error("Erro ao atualizar reserva."),
+  });
+
+  const deleteReservation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("reservations" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reservations"] });
+      toast.success("Reserva apagada!");
+    },
+  });
+
+  const filtered = statusFilter === "all" ? reservations : reservations.filter((r: any) => r.status === statusFilter);
+  const pendingCount = reservations.filter((r: any) => r.status === "pending").length;
+
+  const statusLabel: Record<string, string> = {
+    pending: "Pendente",
+    confirmed: "Confirmada",
+    rejected: "Rejeitada",
+    cancelled: "Cancelada",
+  };
+
+  const statusColor: Record<string, string> = {
+    pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    confirmed: "bg-green-500/20 text-green-400 border-green-500/30",
+    rejected: "bg-red-500/20 text-red-400 border-red-500/30",
+    cancelled: "bg-muted text-muted-foreground border-border",
+  };
+
+  if (isLoading) return <p className="text-muted-foreground text-center py-10">A carregar reservas...</p>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-primary" /> Reservas
+          {pendingCount > 0 && (
+            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 ml-2">{pendingCount} pendente{pendingCount > 1 ? "s" : ""}</Badge>
+          )}
+        </h2>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-48 bg-secondary border-border text-foreground">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estados</SelectItem>
+            <SelectItem value="pending">Pendentes</SelectItem>
+            <SelectItem value="confirmed">Confirmadas</SelectItem>
+            <SelectItem value="rejected">Rejeitadas</SelectItem>
+            <SelectItem value="cancelled">Canceladas</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-muted-foreground text-center py-10 font-body">Nenhuma reserva encontrada.</p>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((r: any) => (
+            <div key={r.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2 flex-wrap">
+                <div>
+                  <h3 className="font-display font-semibold text-foreground text-lg">{r.customer_name}</h3>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1 flex-wrap">
+                    <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{r.customer_phone}</span>
+                    <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{r.customer_email}</span>
+                  </div>
+                </div>
+                <Badge className={`${statusColor[r.status] || ""} border text-xs`}>{statusLabel[r.status] || r.status}</Badge>
+              </div>
+
+              <div className="flex items-center gap-4 text-sm text-foreground flex-wrap">
+                <span className="flex items-center gap-1 text-primary font-semibold">
+                  <Calendar className="h-4 w-4" /> {r.date}
+                </span>
+                <span className="font-semibold">{r.time}</span>
+                <span className="flex items-center gap-1"><Users className="h-4 w-4 text-muted-foreground" /> {r.party_size} pessoa{r.party_size > 1 ? "s" : ""}</span>
+              </div>
+
+              {r.notes && <p className="text-sm text-muted-foreground italic">📝 {r.notes}</p>}
+
+              <div className="flex gap-2 pt-1 flex-wrap">
+                {r.status === "pending" && (
+                  <>
+                    <Button size="sm" onClick={() => updateStatus.mutate({ id: r.id, status: "confirmed" })} className="bg-green-600 hover:bg-green-700 text-white">
+                      <Check className="h-4 w-4 mr-1" /> Aceitar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => updateStatus.mutate({ id: r.id, status: "rejected" })}>
+                      <X className="h-4 w-4 mr-1" /> Recusar
+                    </Button>
+                  </>
+                )}
+                {r.status === "confirmed" && (
+                  <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: r.id, status: "cancelled" })} className="border-border text-muted-foreground">
+                    Cancelar
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => { if (confirm("Apagar esta reserva?")) deleteReservation.mutate(r.id); }} className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default AdminDashboard;
