@@ -18,6 +18,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const ReservationPage = lazy(() => import("./pages/ReservationPage"));
 
 const queryClient = new QueryClient();
 
