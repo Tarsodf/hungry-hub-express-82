@@ -12,6 +12,7 @@ const Header = () => {
   const navLinks = [
     { to: "/", label: "Início" },
     { to: "/cardapio", label: "Cardápio" },
+    { to: "/reserva", label: "Reservas" },
     { to: "/carrinho", label: "Carrinho" },
   ];
 
