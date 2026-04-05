@@ -1,32 +1,75 @@
 
 
-## Plano: Corrigir ficheiros trocados
+## Plano: Sistema de Reservas com Gestão no Painel Admin
 
-As alterações manuais trocaram o conteúdo dos ficheiros. Aqui está o que aconteceu:
+### Visão Geral
+Criar um sistema completo de reservas onde clientes podem agendar mesas pelo site, o pedido é enviado por email ao restaurante, e o administrador pode aceitar ou recusar reservas no painel.
 
-| Ficheiro | Conteúdo atual (ERRADO) | Conteúdo correto |
-|---|---|---|
-| `src/pages/Index.tsx` | Código da edge function create-checkout (Deno/Stripe) | Página inicial do site (homepage) |
-| `supabase/functions/create-checkout/index.ts` | Código do CartPage (React) | Edge function de checkout (Deno/Stripe) |
-| `src/pages/CartPage.tsx` | Apenas um snippet de `handleSubmitOrder` (81 linhas) | Componente completo do carrinho |
+---
 
-### O que será feito
+### 1. Base de Dados — Tabela `reservations`
 
-**1. Restaurar `src/pages/Index.tsx`** como homepage
-- Recriar a página inicial com hero section, botões para cardápio, secção de reviews (GoogleReviews) e informações do restaurante
+Criar tabela com os campos:
+- `id`, `customer_name`, `customer_email`, `customer_phone`
+- `date` (data da reserva), `time` (horário)
+- `party_size` (número de pessoas)
+- `notes` (observações)
+- `status` (enum: `pending`, `confirmed`, `rejected`, `cancelled`)
+- `created_at`, `updated_at`
 
-**2. Restaurar `supabase/functions/create-checkout/index.ts`** com o código correto da edge function
-- O código que está atualmente em `Index.tsx` (linhas 1-351) é o código correto da edge function — será movido de volta para `create-checkout/index.ts`
+Políticas RLS:
+- Qualquer pessoa pode inserir (público — formulário sem login)
+- Apenas admins podem ver, atualizar e apagar reservas
 
-**3. Restaurar `src/pages/CartPage.tsx`** como componente completo
-- Usar o código que está em `create-checkout/index.ts` (que é o CartPage React completo com lógica de pagamento, MB WAY, formulário, etc.) como base
-- Garantir que o JSX completo do carrinho está incluído (a versão atual em `create-checkout` tem `{/* ... restante do layout ... */}` no JSX — será necessário reconstruir o layout completo)
+---
 
-**4. Deploy da edge function** `create-checkout` após restaurar o código correto
+### 2. Página de Reservas (`/reserva`)
 
-### Detalhes técnicos
+Nova página com formulário:
+- Nome, email, telefone
+- Data (calendário), horário (select com faixas horárias)
+- Número de pessoas (select 1-20)
+- Observações (textarea opcional)
+- Validação com feedback visual
+- Mensagem de confirmação após envio
 
-- O conteúdo da edge function `create-checkout` (com validação, cálculo server-side, Stripe session, rate limiting) será restaurado a partir do que está em `Index.tsx`
-- A homepage será recriada com a estrutura típica: hero, CTA para cardápio, GoogleReviews
-- O CartPage será reconstruído com o layout completo do carrinho incluindo: lista de itens, formulário de dados, seleção de entrega/retirada, calculadora de taxa, seleção de pagamento, e botões de submissão
+---
+
+### 3. Link na Página Principal
+
+Adicionar um botão/secção na página inicial (Index.tsx) com link para `/reserva`, posicionado após a secção "Sobre Nós" ou no hero.
+
+---
+
+### 4. Notificação por Email
+
+Usar o email do restaurante (`bistrogrillr@gmail.com`) — ao submeter a reserva, invocar uma Edge Function que notifica o admin por email com os detalhes da reserva.
+
+---
+
+### 5. Painel Admin — Aba "Reservas"
+
+Nova aba no AdminDashboard com:
+- Lista de reservas pendentes, confirmadas e rejeitadas
+- Filtros por data e status
+- Botões para **Aceitar** ou **Recusar** cada reserva
+- Badge com contagem de pendentes
+- Detalhes do cliente (nome, telefone, email, nº pessoas, data/hora, notas)
+
+---
+
+### 6. Rota no App.tsx
+
+Adicionar rota `/reserva` apontando para a nova página.
+
+---
+
+### Detalhes Técnicos
+
+- **Tabela**: `reservations` com RLS (INSERT público, SELECT/UPDATE/DELETE apenas admin)
+- **Edge Function**: `notify-reservation` para envio de email ao admin
+- **AdminDashboard.tsx**: Nova aba `reservations` no array de tabs, novo componente `ReservationManagement`
+- **Nova página**: `src/pages/ReservationPage.tsx`
+- **Index.tsx**: Secção CTA com link para `/reserva`
+- **App.tsx**: Rota lazy-loaded `/reserva`
 
