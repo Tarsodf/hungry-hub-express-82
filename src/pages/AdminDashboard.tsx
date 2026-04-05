@@ -50,6 +50,7 @@ const AdminDashboard = () => {
     { id: "menu" as const, label: "Cardápio", icon: UtensilsCrossed },
     { id: "orders" as const, label: "Pedidos", icon: Package },
     { id: "history" as const, label: "Histórico", icon: History },
+    { id: "reservations" as const, label: "Reservas", icon: CalendarDays },
     { id: "settings" as const, label: "Configurações", icon: Settings },
   ];
 
