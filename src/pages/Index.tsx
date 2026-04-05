@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MapPin, Truck, Flame, Heart } from "lucide-react";
+import { MapPin, Truck, Flame, Heart, CalendarDays } from "lucide-react";
 import GoogleReviews from "@/components/GoogleReviews";
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
