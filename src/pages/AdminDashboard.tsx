@@ -112,12 +112,37 @@ const getStartDate = (period: PeriodFilter): Date | null => {
   return null;
 };
 
+const playNewOrderSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playBeep = (freq: number, startTime: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.3, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+    const now = ctx.currentTime;
+    playBeep(880, now, 0.15);
+    playBeep(1100, now + 0.18, 0.15);
+    playBeep(1320, now + 0.36, 0.25);
+  } catch (e) {
+    console.warn("Could not play sound", e);
+  }
+};
+
 const DashboardView = () => {
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<PeriodFilter>("today");
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purgePassword, setPurgePassword] = useState("");
   const [purging, setPurging] = useState(false);
+  const prevOrderCountRef = useRef<number | null>(null);
 
   const { data: items = [] } = useQuery({
     queryKey: ["admin-menu-items"],
