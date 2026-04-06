@@ -143,6 +143,7 @@ const DashboardView = () => {
   const [purgePassword, setPurgePassword] = useState("");
   const [purging, setPurging] = useState(false);
   const prevOrderCountRef = useRef<number | null>(null);
+  const initialLoadDone = useRef(false);
 
   const { data: items = [] } = useQuery({
     queryKey: ["admin-menu-items"],
