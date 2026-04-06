@@ -174,7 +174,7 @@ const DashboardView = () => {
     prevOrderCountRef.current = allOrders.length;
   }, [allOrders.length]);
 
-
+  const filteredOrders = useMemo(() => {
     const start = getStartDate(period);
     if (!start) return allOrders;
     return allOrders.filter((o: any) => new Date(o.created_at) >= start);
