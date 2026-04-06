@@ -168,6 +168,13 @@ const DashboardView = () => {
   });
 
   useEffect(() => {
+    if (!initialLoadDone.current) {
+      if (allOrders.length > 0) {
+        prevOrderCountRef.current = allOrders.length;
+        initialLoadDone.current = true;
+      }
+      return;
+    }
     if (prevOrderCountRef.current !== null && allOrders.length > prevOrderCountRef.current) {
       playNewOrderSound();
       toast.info("🔔 Novo pedido recebido!");
