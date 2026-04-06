@@ -27,7 +27,9 @@ serve(async (req) => {
     });
 
     // Retrieve the checkout session from Stripe
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ["payment_intent"],
+    });
 
     const orderId = session.metadata?.order_id;
     if (!orderId) {
@@ -40,6 +42,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    const paymentIntent = typeof session.payment_intent === "object" && session.payment_intent !== null
+      ? session.payment_intent
+      : null;
+    const paymentIntentStatus = typeof paymentIntent?.status === "string" ? paymentIntent.status : null;
 
     if (session.payment_status === "paid") {
       // Payment confirmed — update order to received (confirmed)
@@ -60,16 +67,38 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
-    } else {
+    }
+
+    const derivedStatus =
+      session.status === "expired"
+        ? "expired"
+        : paymentIntentStatus === "processing"
+          ? "processing"
+          : paymentIntentStatus === "canceled"
+            ? "failed"
+            : "pending";
+
+    if (derivedStatus === "processing" || derivedStatus === "pending") {
       return new Response(JSON.stringify({
-        status: "unpaid",
+        status: derivedStatus,
         order_id: orderId,
         payment_status: session.payment_status,
+        payment_intent_status: paymentIntentStatus,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
+
+    return new Response(JSON.stringify({
+      status: derivedStatus,
+      order_id: orderId,
+      payment_status: session.payment_status,
+      payment_intent_status: paymentIntentStatus,
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
   } catch (error) {
     console.error("verify-payment error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
