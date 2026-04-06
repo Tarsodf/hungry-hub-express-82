@@ -143,6 +143,7 @@ const DashboardView = () => {
   const [purgePassword, setPurgePassword] = useState("");
   const [purging, setPurging] = useState(false);
   const prevOrderCountRef = useRef<number | null>(null);
+  const initialLoadDone = useRef(false);
 
   const { data: items = [] } = useQuery({
     queryKey: ["admin-menu-items"],
@@ -167,6 +168,13 @@ const DashboardView = () => {
   });
 
   useEffect(() => {
+    if (!initialLoadDone.current) {
+      if (allOrders.length > 0) {
+        prevOrderCountRef.current = allOrders.length;
+        initialLoadDone.current = true;
+      }
+      return;
+    }
     if (prevOrderCountRef.current !== null && allOrders.length > prevOrderCountRef.current) {
       playNewOrderSound();
       toast.info("🔔 Novo pedido recebido!");
