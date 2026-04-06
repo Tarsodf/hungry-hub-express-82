@@ -166,7 +166,15 @@ const DashboardView = () => {
     refetchInterval: 15000,
   });
 
-  const filteredOrders = useMemo(() => {
+  useEffect(() => {
+    if (prevOrderCountRef.current !== null && allOrders.length > prevOrderCountRef.current) {
+      playNewOrderSound();
+      toast.info("🔔 Novo pedido recebido!");
+    }
+    prevOrderCountRef.current = allOrders.length;
+  }, [allOrders.length]);
+
+
     const start = getStartDate(period);
     if (!start) return allOrders;
     return allOrders.filter((o: any) => new Date(o.created_at) >= start);
