@@ -967,6 +967,19 @@ const OrderManagement = () => {
     pending_payment: "Pagamento Pendente", pending_confirmation: "Aguardando Confirmação", received: "Recebido", preparing: "Em Preparação", ready: "Pronto", delivered: "Entregue", cancelled: "Cancelado"
   };
 
+  const getStatusOptions = (order: any) => {
+    const isOnlinePayment = ["card", "mbway", "multibanco"].includes(order.payment_method);
+
+    if (isOnlinePayment && order.status === "pending_payment") {
+      return {
+        pending_payment: statusLabels.pending_payment,
+        cancelled: statusLabels.cancelled,
+      };
+    }
+
+    return statusLabels;
+  };
+
   const filteredOrders = useMemo(() => {
     if (filter === "pending") return orders.filter((o: any) => ["pending_payment", "pending_confirmation", "received", "preparing", "ready"].includes(o.status));
     if (filter === "done") return orders.filter((o: any) => ["delivered", "cancelled"].includes(o.status));
@@ -1062,7 +1075,7 @@ const OrderManagement = () => {
                 <Select value={order.status} onValueChange={(v) => statusMutation.mutate({ id: order.id, status: v })}>
                   <SelectTrigger className="w-full sm:w-40 bg-secondary border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(statusLabels).map(([k, v]) => (
+                    {Object.entries(getStatusOptions(order)).map(([k, v]) => (
                       <SelectItem key={k} value={k}>{v}</SelectItem>
                     ))}
                   </SelectContent>

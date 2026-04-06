@@ -34,6 +34,17 @@ interface CheckoutInput {
   payment_method?: "card" | "mbway" | "multibanco";
 }
 
+const getStripePaymentMethods = (paymentMethod: CheckoutInput["payment_method"]): Array<"card" | "mb_way" | "multibanco"> => {
+  switch (paymentMethod) {
+    case "mbway":
+      return ["mb_way"];
+    case "multibanco":
+      return ["multibanco"];
+    default:
+      return ["card"];
+  }
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -321,8 +332,7 @@ serve(async (req) => {
         customer_name: name,
         customer_phone: phone,
       },
-      payment_method_types:
-        paymentMethod === "mbway" ? ["mb_way"] : paymentMethod === "multibanco" ? ["multibanco"] : ["card"],
+      payment_method_types: getStripePaymentMethods(paymentMethod),
     });
 
     await supabaseAdmin.from("orders").update({ stripe_payment_id: session.id }).eq("id", order.id);
