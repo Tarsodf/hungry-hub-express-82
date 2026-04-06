@@ -138,6 +138,7 @@ const DashboardView = () => {
       if (error) throw error;
       return data;
     },
+    refetchInterval: 15000,
   });
 
   const filteredOrders = useMemo(() => {
@@ -953,6 +954,7 @@ const OrderManagement = () => {
       if (error) throw error;
       return data;
     },
+    refetchInterval: 15000,
   });
 
   const statusMutation = useMutation({
