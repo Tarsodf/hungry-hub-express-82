@@ -953,6 +953,7 @@ const OrderManagement = () => {
       if (error) throw error;
       return data;
     },
+    refetchInterval: 15000,
   });
 
   const statusMutation = useMutation({
