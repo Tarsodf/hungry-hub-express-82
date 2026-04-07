@@ -197,23 +197,23 @@ const MenuPage = () => {
 
   return (
     <main className="bg-background min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 md:px-4 py-5 md:py-8">
         {/* Header */}
         <div className="text-center mb-2">
-          <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">Cardápio</h1>
-          <p className="text-muted-foreground font-body mt-2">
-            🔥 Hoje é <span className="font-semibold text-primary">{DAY_NAMES[today]}</span> — 
-            Os Pratos Executivos mudam diariamente!
+          <h1 className="font-display text-2xl md:text-4xl font-bold text-foreground">Cardápio</h1>
+          <p className="text-muted-foreground font-body mt-1 md:mt-2 text-xs md:text-base">
+            🔥 Hoje: <span className="font-semibold text-primary">{DAY_NAMES[today]}</span> — 
+            Executivos mudam diariamente!
           </p>
         </div>
 
-        {/* Category tabs */}
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {/* Category tabs - horizontal scroll on mobile */}
+        <div className="mt-4 md:mt-6 flex md:flex-wrap md:justify-center gap-2 overflow-x-auto pb-2 -mx-3 px-3 md:mx-0 md:px-0 scrollbar-hide">
           {categoryNames.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full font-body text-sm font-medium transition-all ${
+              className={`px-3.5 md:px-4 py-2 rounded-full font-body text-xs md:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                 activeCategory === cat
                   ? "bg-primary text-primary-foreground"
                   : "glass text-muted-foreground hover:text-foreground hover:border-primary/30"
@@ -226,21 +226,21 @@ const MenuPage = () => {
 
         {/* Menu items grid */}
         {isLoading ? (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 md:mt-8 grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="glass rounded-xl p-5 space-y-3">
-                <Skeleton className="h-40 w-full rounded-lg bg-secondary" />
-                <Skeleton className="h-6 w-3/4 bg-secondary" />
-                <Skeleton className="h-4 w-full bg-secondary" />
+              <div key={i} className="glass rounded-xl p-3 md:p-5 space-y-2 md:space-y-3">
+                <Skeleton className="h-28 md:h-40 w-full rounded-lg bg-secondary" />
+                <Skeleton className="h-5 md:h-6 w-3/4 bg-secondary" />
+                <Skeleton className="h-3 md:h-4 w-full bg-secondary" />
               </div>
             ))}
           </div>
         ) : filteredItems.length === 0 ? (
-          <p className="mt-12 text-center text-muted-foreground font-body">
+          <p className="mt-12 text-center text-muted-foreground font-body text-sm">
             Nenhum item encontrado nesta categoria.
           </p>
         ) : (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 md:mt-8 grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item: any) => {
               const available = isAvailableToday(item);
               const exec = isExecutivo(item);
@@ -256,63 +256,63 @@ const MenuPage = () => {
                       <img
                         src={item.image_url}
                         alt={item.name}
-                        className="h-48 w-full object-contain bg-secondary cursor-pointer transition-transform hover:scale-105"
+                        className="h-32 md:h-48 w-full object-contain bg-secondary cursor-pointer transition-transform hover:scale-105"
                         loading="lazy"
                         onClick={() => setDetailItem(item)}
                       />
                     ) : (
                       <div
-                        className="h-48 w-full bg-secondary flex items-center justify-center text-4xl cursor-pointer"
+                        className="h-32 md:h-48 w-full bg-secondary flex items-center justify-center text-3xl md:text-4xl cursor-pointer"
                         onClick={() => setDetailItem(item)}
                       >
                         {exec ? "🍽️" : "🍴"}
                       </div>
                     )}
                     {item.image_url && (
-                      <span className="absolute bottom-1 right-2 text-[10px] text-foreground/80 italic font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                        *Imagem meramente ilustrativa
+                      <span className="absolute bottom-0.5 right-1 md:bottom-1 md:right-2 text-[8px] md:text-[10px] text-foreground/80 italic font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                        *Ilustrativa
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h3 className="font-display text-lg font-semibold text-foreground">{item.name}</h3>
+                  <div className="flex flex-1 flex-col p-3 md:p-5">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-1">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-display text-sm md:text-lg font-semibold text-foreground leading-tight line-clamp-2">{item.name}</h3>
                         {exec && (
-                          <Badge className={`mt-1 text-xs ${available ? "bg-primary/20 text-primary border-primary/30" : "bg-secondary text-muted-foreground"}`}>
+                          <Badge className={`mt-1 text-[10px] md:text-xs ${available ? "bg-primary/20 text-primary border-primary/30" : "bg-secondary text-muted-foreground"}`}>
                             {available ? (
-                              <><Star className="h-3 w-3 mr-1" /> Prato do dia</>
+                              <><Star className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5" /> Do dia</>
                             ) : (
-                              <><Lock className="h-3 w-3 mr-1" /> {DAY_NAMES[item.day_of_week]}</>
+                              <><Lock className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5" /> {DAY_NAMES[item.day_of_week]}</>
                             )}
                           </Badge>
                         )}
                       </div>
-                      <div className="text-right">
-                        <span className="font-body text-lg font-bold text-primary">
+                      <div className="md:text-right">
+                        <span className="font-body text-sm md:text-lg font-bold text-primary">
                           €{Number(item.price).toFixed(2)}
                         </span>
-                        <p className="text-[10px] text-muted-foreground">+ €0.90 taxa</p>
+                        <p className="text-[8px] md:text-[10px] text-muted-foreground">+ €0.90 taxa</p>
                       </div>
                     </div>
                     {item.description && (
-                      <p className="mt-2 flex-1 font-body text-sm text-muted-foreground">{item.description}</p>
+                      <p className="mt-1 md:mt-2 flex-1 font-body text-[11px] md:text-sm text-muted-foreground line-clamp-2">{item.description}</p>
                     )}
                     {item.ingredients && item.ingredients.length > 0 && (
-                      <p className="mt-1 font-body text-xs text-muted-foreground/70">
+                      <p className="mt-0.5 md:mt-1 font-body text-[10px] md:text-xs text-muted-foreground/70 line-clamp-1">
                         {item.ingredients.join(" · ")}
                       </p>
                     )}
                     <Button
                       size="sm"
-                      className="mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body"
+                      className="mt-2.5 md:mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body text-xs md:text-sm h-8 md:h-9"
                       onClick={() => handleQuickAdd(item)}
                       disabled={!available}
                     >
                       {available ? (
-                        <><Plus className="mr-1 h-4 w-4" /> Adicionar</>
+                        <><Plus className="mr-0.5 h-3.5 w-3.5 md:h-4 md:w-4" /> Adicionar</>
                       ) : (
-                        <><Lock className="mr-1 h-4 w-4" /> Disponível {DAY_NAMES[item.day_of_week]}</>
+                        <><Lock className="mr-0.5 h-3 w-3" /> {DAY_NAMES[item.day_of_week]}</>
                       )}
                     </Button>
                   </div>

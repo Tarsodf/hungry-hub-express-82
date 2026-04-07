@@ -35,8 +35,8 @@ const Footer = () => {
 
   return (
     <footer className="border-t border-border bg-card">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-3">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-3">
           <div>
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">

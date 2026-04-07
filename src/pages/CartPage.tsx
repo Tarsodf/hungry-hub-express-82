@@ -257,25 +257,25 @@ const CartPage = () => {
   }
 
   return (
-    <main className="bg-background min-h-screen pb-8">
-      <div className="max-w-4xl mx-auto px-4 pt-6">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-6">
+    <main className="bg-background min-h-screen pb-6 md:pb-8">
+      <div className="max-w-4xl mx-auto px-3 md:px-4 pt-4 md:pt-6">
+        <h1 className="font-display text-xl md:text-3xl font-bold text-foreground mb-4 md:mb-6">
           🛒 Carrinho ({itemCount} {itemCount === 1 ? "item" : "itens"})
         </h1>
 
         {/* Cart Items */}
-        <div className="space-y-3 mb-8">
+        <div className="space-y-2 md:space-y-3 mb-6 md:mb-8">
           {items.map((item) => {
             const key = `${item.id}-${getCustomizationKey(item.customization)}`;
             const addonsTotal = item.customization?.addons?.reduce((s, a) => s + a.price, 0) || 0;
             const unitPrice = item.price + addonsTotal;
             return (
-              <div key={key} className="bg-card rounded-xl border border-border p-4 flex items-start gap-4">
+              <div key={key} className="bg-card rounded-xl border border-border p-3 md:p-4 flex items-start gap-3 md:gap-4">
                 {item.image && (
-                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                  <img src={item.image} alt={item.name} className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-display font-semibold text-foreground truncate">{item.name}</h3>
+                  <h3 className="font-display font-semibold text-foreground truncate text-sm md:text-base">{item.name}</h3>
                   {item.customization?.removed?.length ? (
                     <p className="text-xs text-muted-foreground">❌ Sem: {item.customization.removed.join(", ")}</p>
                   ) : null}
