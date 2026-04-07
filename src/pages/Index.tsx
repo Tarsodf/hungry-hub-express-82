@@ -146,7 +146,7 @@ const Index = () => {
         </h3>
         <p className="font-body text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto">
           Os nossos pratos podem conter alergénios. Se tem alguma alergia,{" "}
-          <a href="tel:+351930580520" className="text-primary font-semibold hover:underline">contacte-nos</a> antes de encomendar.
+          <a href="mailto:bistrogrillr@gmail.com" className="text-primary font-semibold hover:underline">contacte-nos</a> antes de encomendar.
         </p>
       </section>
     </main>
