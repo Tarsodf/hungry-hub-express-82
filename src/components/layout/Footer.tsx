@@ -1,4 +1,5 @@
 import { MapPin, Clock, Phone, Mail, Truck, Instagram } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -39,9 +40,7 @@ const Footer = () => {
         <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-3">
           <div>
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <span className="text-lg">🔥</span>
-              </div>
+              <img src={logo} alt="Dom Bistro Grill" className="h-10 w-10 rounded-lg object-cover" />
               <h3 className="font-display text-xl font-bold text-foreground">Dom Bistro Grill</h3>
             </div>
             <p className="font-body text-sm leading-relaxed text-muted-foreground">
