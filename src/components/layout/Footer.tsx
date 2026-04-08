@@ -1,4 +1,5 @@
 import { MapPin, Clock, Phone, Mail, Truck, Instagram } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
