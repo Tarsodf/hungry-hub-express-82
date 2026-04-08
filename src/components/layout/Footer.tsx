@@ -101,8 +101,13 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Dom Bistro Grill — Guimarães, Portugal. Todos os direitos reservados.
+        <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground space-y-2">
+          <div className="flex justify-center gap-4">
+            <a href="/termos" className="hover:text-primary transition-colors underline">Termos & Condições</a>
+            <span>•</span>
+            <a href="/privacidade" className="hover:text-primary transition-colors underline">Política de Privacidade</a>
+          </div>
+          <p>© {new Date().getFullYear()} Dom Bistro Grill — Guimarães, Portugal. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>
