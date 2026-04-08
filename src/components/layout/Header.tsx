@@ -23,9 +23,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 glass border-b border-border/50">
       <div className="container mx-auto flex items-center justify-between px-4 py-3">
         <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0">
-          <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
-            <span className="text-sm md:text-lg font-bold text-primary-foreground">🔥</span>
-          </div>
+          <img src={logo} alt="Dom Bistro Grill" className="h-8 w-8 md:h-10 md:w-10 rounded-lg object-cover flex-shrink-0" />
           <div className="min-w-0">
             <span className="font-display text-base md:text-xl font-bold text-foreground block truncate">Dom Bistro Grill</span>
             <p className="text-[8px] md:text-[10px] uppercase tracking-widest text-muted-foreground">Brasileiro • Guimarães</p>
