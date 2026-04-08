@@ -3,6 +3,7 @@ import { ShoppingCart, Menu, X, Shield } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo.jpg";
 
 const Header = () => {
   const { itemCount } = useCart();
