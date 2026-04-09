@@ -54,6 +54,7 @@ const AppLayout = () => {
           © {new Date().getFullYear()} Dom Bistro Grill — Painel Administrativo
         </footer>
       )}
+      <CookieConsent />
     </div>
   );
 };
