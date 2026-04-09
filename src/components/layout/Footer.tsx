@@ -7,7 +7,7 @@ const DEFAULTS: Record<string, string> = {
   address_line1: "Alam São Damasco - S. Francisco",
   address_line2: "Centro 35, N/A",
   address_line3: "4810-286 Guimarães, Portugal",
-  phone: "+351 930 580 520",
+  phone: "+351 961 454 554",
   email: "bistrogrillr@gmail.com",
   instagram_url: "https://www.instagram.com/dombistrogrill",
   instagram_handle: "@dombistrogrill",
