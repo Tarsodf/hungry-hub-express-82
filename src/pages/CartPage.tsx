@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DeliveryFeeCalculator from "@/components/DeliveryFeeCalculator";
 import PaymentMethodSelector, { type PaymentMethod } from "@/components/PaymentMethodSelector";
 
-const WHATSAPP_NUMBER = "351930580520";
+const WHATSAPP_NUMBER = "351961454554";
 const POSTAL_CODE_REGEX = /^\d{4}-?\d{3}$/;
 
 const CartPage = () => {

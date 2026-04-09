@@ -1,0 +1,1 @@
+UPDATE public.site_settings SET value = '+351 961 454 554', updated_at = now() WHERE key = 'phone';
