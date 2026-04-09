@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import CookieConsent from "@/components/CookieConsent";
 import Index from "./pages/Index";
 import { lazy, Suspense } from "react";
 
@@ -53,6 +54,7 @@ const AppLayout = () => {
           © {new Date().getFullYear()} Dom Bistro Grill — Painel Administrativo
         </footer>
       )}
+      <CookieConsent />
     </div>
   );
 };
